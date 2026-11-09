@@ -356,20 +356,28 @@
         .source-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 
         /* ---------- Přehrávač ---------- */
+        /* Vrstvy přehrávače jsou absolutně umístěné – spolehlivější než mřížka
+           v mobilním Safari a při otočení na šířku */
         .player {
             position: fixed; inset: 0; z-index: 100;
-            background: #000; color: #fff;
-            display: grid; grid-template-rows: 1fr;
+            width: 100vw; height: 100vh; height: 100dvh;
+            background: #000; color: #fff; overflow: hidden;
         }
         .player video {
+            position: absolute; inset: 0; z-index: 0;
             width: 100%; height: 100%; object-fit: contain; background: #000;
-            grid-area: 1 / 1; position: relative; z-index: 0;
         }
         .player-chrome {
-            grid-area: 1 / 1; display: flex; flex-direction: column; justify-content: space-between;
-            position: relative; z-index: 2;
+            position: absolute; inset: 0; z-index: 2;
+            display: flex; flex-direction: column; justify-content: space-between;
             pointer-events: none; transition: opacity .25s;
         }
+        /* Když běží přehrávač, stránka pod ním se nevykresluje
+           (rozmazané pozadí a průhledná lišta umí v Chromu schovat video) */
+        body.player-open > .topbar,
+        body.player-open > main,
+        body.player-open > .site-footer { display: none; }
+        body.player-open { overflow: hidden; background: #000; }
         .player.idle .player-chrome { opacity: 0; }
         .player.idle { cursor: none; }
         .player-top, .player-bottom { pointer-events: auto; padding: 16px max(20px, env(safe-area-inset-left)); }
@@ -423,6 +431,12 @@
         .volume { display: inline-flex; align-items: center; }
         .volume input { width: 90px; accent-color: var(--red); }
         @media (max-width: 640px) { .volume input, .hide-narrow { display: none; } }
+        @media (max-height: 500px) {
+            .player-top { padding-top: 8px; padding-bottom: 28px; }
+            .player-bottom { padding-top: 28px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+            .player-heading strong { font-size: 1.125rem; }
+            .player-top, .player-bottom { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+        }
 
         .p-menu { position: relative; }
         .p-menu-list {
@@ -438,10 +452,12 @@
         .p-menu-list button[aria-checked="true"] { color: var(--red); }
 
         .player-center {
-            grid-area: 1 / 1; place-self: center; text-align: center;
-            position: relative; z-index: 1;
-            pointer-events: none; padding: 24px; max-width: 520px;
+            position: absolute; left: 50%; top: 50%; z-index: 1;
+            transform: translate(-50%, -50%);
+            width: min(520px, calc(100% - 48px)); text-align: center;
+            pointer-events: none;
         }
+        .player-center:empty { display: none; }
         .player-center.interactive { pointer-events: auto; }
         .spinner {
             width: 6px; height: 56px; background: var(--red); margin: 0 auto;
@@ -450,6 +466,21 @@
         @keyframes pulse { 0%, 100% { transform: scaleY(.3); opacity: .5; } 50% { transform: scaleY(1); opacity: 1; } }
         .player-msg { margin: 16px 0 0; font-size: 1.0625rem; }
         .player-msg + .btn { margin-top: 16px; }
+
+        /* ---------- Patička ---------- */
+        .site-footer {
+            max-width: 1600px; margin: 0 auto;
+            padding: 24px var(--gutter) max(32px, env(safe-area-inset-bottom));
+            border-top: 1px solid var(--line);
+            color: var(--muted); font-size: 14px;
+            display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 32px;
+        }
+        .site-footer p { margin: 0; }
+        .site-footer a {
+            color: var(--text); font-weight: 600; text-decoration: none;
+            border-bottom: 1px solid var(--line);
+        }
+        .site-footer a:hover { border-color: var(--red); }
 
         /* ---------- Toast ---------- */
         .toast {
@@ -531,6 +562,11 @@
             <div id="detailContent"></div>
         </section>
     </main>
+
+    <footer class="site-footer" lang="en">
+        <p>Created by <a href="https://atrixx.org/" target="_blank" rel="noopener">Atrixx</a></p>
+        <p>This content was assisted in collaboration with <a href="https://claude.ai" target="_blank" rel="noopener">Claude (Anthropic)</a></p>
+    </footer>
 
     <!-- Přehrávač přes celou obrazovku -->
     <div id="player" class="player" hidden role="dialog" aria-modal="true" aria-label="Přehrávač" data-i18n-aria="playerLabel">

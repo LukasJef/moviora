@@ -813,6 +813,7 @@ let idleTimer = null;
 let lastSave = 0;
 let currentSources = [];
 let lastFocus = null;
+let savedScrollY = 0;
 
 function playerMessage(html, interactive = false) {
     P.center.innerHTML = html;
@@ -876,8 +877,9 @@ function openPlayer() {
     P.qualityMenu.hidden = true;
 
     if (playerEl.hidden) {
+        savedScrollY = window.scrollY;
         playerEl.hidden = false;
-        document.body.style.overflow = 'hidden';
+        document.body.classList.add('player-open');
         history.pushState({ ...(history.state || {}), player: true }, '', location.href);
     }
     updatePlayButton();
@@ -896,7 +898,8 @@ function closePlayer(fromPopState = false) {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 
     playerEl.hidden = true;
-    document.body.style.overflow = '';
+    document.body.classList.remove('player-open');
+    window.scrollTo(0, savedScrollY);
     playerMessage('');
     clearTimeout(idleTimer);
 
@@ -1080,11 +1083,29 @@ P.quality.addEventListener('click', () => {
 });
 P.full.addEventListener('click', toggleFullscreen);
 
+const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches;
+
 function toggleFullscreen() {
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    else if (playerEl.requestFullscreen) playerEl.requestFullscreen().catch(() => {});
-    else if (videoPlayer.webkitEnterFullscreen) videoPlayer.webkitEnterFullscreen(); // iPhone
+    if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+    } else if (playerEl.requestFullscreen) {
+        playerEl.requestFullscreen()
+            .then(() => {
+                // Na telefonu ve fullscreenu otočit na šířku (Android; iPhone to neumí)
+                if (IS_TOUCH && screen.orientation?.lock) screen.orientation.lock('landscape').catch(() => {});
+            })
+            .catch(() => {});
+    } else if (videoPlayer.webkitEnterFullscreen) {
+        videoPlayer.webkitEnterFullscreen(); // iPhone
+    }
 }
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && screen.orientation?.unlock) {
+        try { screen.orientation.unlock(); } catch { /* nepodporováno */ }
+    }
+    wakeControls();
+});
 
 // Posuvník – klik i tažení
 let seeking = false;
