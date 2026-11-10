@@ -122,7 +122,9 @@ const I18N = {
         backOnline: 'Server je zase online',
         tvModeOn: 'Režim pro televizi', tvModeOff: 'Vypnout režim pro televizi',
         tvEnabled: 'Režim pro televizi zapnutý – ovládej šipkami', tvDisabled: 'Režim pro televizi vypnutý',
-        tvHintMove: 'pohyb', tvHintOk: 'vybrat', tvHintBack: 'zpět'
+        tvHintMove: 'pohyb', tvHintOk: 'vybrat', tvHintBack: 'zpět',
+        seasonsCount: '{n} řad', seasonsCount1: '1 řada', seasonsCount2: '{n} řady',
+        loadingEpisodes: 'Načítám díly…', lastEpisode: 'Tohle byl poslední díl seriálu.'
     },
     en: {
         homeLink: 'Moviora – home', uiLangGroup: 'Site language',
@@ -172,7 +174,9 @@ const I18N = {
         backOnline: 'The server is back online',
         tvModeOn: 'TV mode', tvModeOff: 'Turn off TV mode',
         tvEnabled: 'TV mode on – use the arrow keys', tvDisabled: 'TV mode off',
-        tvHintMove: 'move', tvHintOk: 'select', tvHintBack: 'back'
+        tvHintMove: 'move', tvHintOk: 'select', tvHintBack: 'back',
+        seasonsCount: '{n} seasons', seasonsCount1: '1 season', seasonsCount2: '{n} seasons',
+        loadingEpisodes: 'Loading episodes…', lastEpisode: 'That was the last episode of the series.'
     }
 };
 
@@ -516,13 +520,17 @@ async function openMovieDetail(movie, push = true) {
         genres: movie.genres || '',
         rating: movie.rating || null,
         isSeries: Boolean(movie.isSeries),
-        runtime: movie.runtime || null
+        runtime: movie.runtime || null,
+        imdbLink: movie.imdbLink || movie.imdb_url || movie.imdbUrl || null,
+        seasons: null
     };
 
     if (csfdUrl) {
         try {
-            const d = await apiGet(`/csfd-scrape?url=${encodeURIComponent(csfdUrl)}`);
+            const d = await apiGet(`/csfd-scrape?details=1&url=${encodeURIComponent(csfdUrl)}`);
             if (!d.error) {
+                if (d.imdbUrl) details.imdbLink = d.imdbUrl;
+                details.seasons = Array.isArray(d.seasons) && d.seasons.length ? d.seasons : null;
                 if (d.poster && d.poster.trim()) details.poster = d.poster;
                 details.description = d.description || details.description;
                 details.actors = d.cast || details.actors;
@@ -542,10 +550,19 @@ async function openMovieDetail(movie, push = true) {
         const lastEp = readJSON(`last_ep_${currentMovieData.title}`, { season: 1, episode: 1 });
         currentSeason = parseInt(lastEp.season, 10) || 1;
         currentEpisode = parseInt(lastEp.episode, 10) || 1;
+        const seasons = currentMovieData.seasons;
+        if (seasons && !seasons.some(s => s.number === currentSeason)) {
+            currentSeason = seasons[0].number;
+            currentEpisode = 1;
+        }
     }
 
     renderDetail();
     addToHistory(currentMovieData);
+    if (currentMovieData.isSeries && currentMovieData.seasons) {
+        await loadEpisodes();
+        if (reqId !== detailRequestId) return;
+    }
     fetchAndRenderStreams();
 }
 
@@ -561,7 +578,11 @@ function renderDetail() {
 
     const facts = [];
     if (m.year && m.year !== '---') facts.push(`<li>${escapeHtml(m.year)}</li>`);
-    if (m.isSeries) facts.push(`<li>${t('series')}</li>`);
+    if (m.isSeries) {
+        facts.push(`<li>${t('series')}</li>`);
+        const n = m.seasons ? m.seasons.length : 0;
+        if (n) facts.push(`<li>${n === 1 ? t('seasonsCount1') : n < 5 ? t('seasonsCount2', { n }) : t('seasonsCount', { n })}</li>`);
+    }
     else if (m.runtime) facts.push(`<li>${escapeHtml(m.runtime)} min</li>`);
     if (m.genres) facts.push(`<li>${escapeHtml(m.genres)}</li>`);
     if (m.rating) facts.push(`<li class="rating">${t('rating', { n: escapeHtml(m.rating) })}</li>`);
@@ -573,17 +594,17 @@ function renderDetail() {
         <div class="episode-picker">
             <button class="icon-btn" id="epPrev" aria-label="${t('prevEp')}">${ICONS.prev}</button>
             <label>${t('season')}
-                <select id="seasonSelect">${range(1, 30).map(i => `<option value="${i}" ${i === currentSeason ? 'selected' : ''}>${i}</option>`).join('')}</select>
+                <select id="seasonSelect">${seasonNumbers().map(i => `<option value="${i}" ${i === currentSeason ? 'selected' : ''}>${i}</option>`).join('')}</select>
             </label>
             <label>${t('episode')}
-                <select id="episodeSelect">${range(1, 60).map(i => `<option value="${i}" ${i === currentEpisode ? 'selected' : ''}>${i}</option>`).join('')}</select>
+                <select id="episodeSelect">${episodeOptionsHtml()}</select>
             </label>
             <button class="icon-btn" id="epNext" aria-label="${t('nextEp')}">${ICONS.next}</button>
         </div>` : '';
 
     const links = [
-        csfdUrl ? `<a href="${escapeHtml(csfdUrl)}" target="_blank" rel="noopener">${t('onCsfd')}</a>` : '',
-        imdbUrl ? `<a href="${escapeHtml(imdbUrl)}" target="_blank" rel="noopener">${t('onImdb')}</a>` : ''
+        csfdUrl ? `<a class="ext-btn ext-csfd" href="${escapeHtml(csfdUrl)}" target="_blank" rel="noopener">${t('onCsfd')}</a>` : '',
+        imdbUrl ? `<a class="ext-btn ext-imdb" href="${escapeHtml(imdbUrl)}" target="_blank" rel="noopener">${t('onImdb')}</a>` : ''
     ].join('');
 
     detailContent.innerHTML = `
@@ -614,7 +635,7 @@ function renderDetail() {
 
         <section class="shelf" aria-labelledby="sourcesTitle">
             <div class="sources-head">
-                <h2 class="shelf-title" id="sourcesTitle">${m.isSeries ? t('sourcesFor', { ep: episodeTag() }) : t('sources')}</h2>
+                <h2 class="shelf-title" id="sourcesTitle">${m.isSeries ? sourcesTitleText() : t('sources')}</h2>
                 <span class="count" id="sourcesCount"></span>
             </div>
             <div id="sourcesBody"><p class="status">${t('searchingSources')}</p></div>
@@ -649,32 +670,141 @@ function onLanguageChange(lang) {
     fetchAndRenderStreams();
 }
 
-function onEpisodeOrSeasonChange() {
-    currentSeason = parseInt($('seasonSelect').value, 10) || 1;
-    currentEpisode = parseInt($('episodeSelect').value, 10) || 1;
+// ---------- Řady a díly (z ČSFD) ----------
+const episodesCache = new Map();   // id řady → [{ number, title }]
+let episodesRequestId = 0;
+
+function currentSeasonData() {
+    const seasons = currentMovieData && currentMovieData.seasons;
+    return seasons ? seasons.find(s => s.number === currentSeason) || null : null;
+}
+
+function currentEpisodes() {
+    const season = currentSeasonData();
+    if (!season) return null;
+    return season.episodes || episodesCache.get(season.id) || null;
+}
+
+function seasonNumbers() {
+    const seasons = currentMovieData && currentMovieData.seasons;
+    return seasons ? seasons.map(s => s.number) : range(1, 30);
+}
+
+function episodeOptionsHtml() {
+    const eps = currentEpisodes();
+    if (eps && eps.length) {
+        return eps.map(e => `<option value="${e.number}" ${e.number === currentEpisode ? 'selected' : ''}>${e.number}${e.title ? '. ' + escapeHtml(e.title) : ''}</option>`).join('');
+    }
+    if (currentSeasonData()) return `<option value="${currentEpisode}">${t('loadingEpisodes')}</option>`;
+    return range(1, 60).map(i => `<option value="${i}" ${i === currentEpisode ? 'selected' : ''}>${i}</option>`).join('');
+}
+
+function currentEpisodeTitle() {
+    const eps = currentEpisodes();
+    const ep = eps && eps.find(e => e.number === currentEpisode);
+    return ep && ep.title ? ep.title : '';
+}
+
+function sourcesTitleText() {
+    const name = currentEpisodeTitle();
+    return t('sourcesFor', { ep: episodeTag() }) + (name ? ` – ${name}` : '');
+}
+
+function refreshEpisodeUi() {
+    const sSel = $('seasonSelect');
+    if (sSel) sSel.value = String(currentSeason);
+    const eSel = $('episodeSelect');
+    if (eSel) {
+        eSel.innerHTML = episodeOptionsHtml();
+        eSel.value = String(currentEpisode);
+    }
+    const title = $('sourcesTitle');
+    if (title) title.textContent = sourcesTitleText();
     updateEpisodeButtons();
-    $('sourcesTitle').textContent = t('sourcesFor', { ep: episodeTag() });
+}
+
+// Načte díly aktuální řady (z keše nebo ze serveru) a srovná vybraný díl
+async function loadEpisodes() {
+    const season = currentSeasonData();
+    if (!season) { refreshEpisodeUi(); return null; }
+    if (!season.episodes && !episodesCache.has(season.id)) {
+        refreshEpisodeUi();                   // "Načítám díly…"
+        const reqId = ++episodesRequestId;
+        try {
+            const d = await apiGet(`/csfd-episodes?id=${season.id}`);
+            if (!d.error && Array.isArray(d.episodes)) episodesCache.set(season.id, d.episodes);
+        } catch { /* bez seznamu dílů se použije prosté číslo */ }
+        if (reqId !== episodesRequestId) return null;
+    }
+    const eps = currentEpisodes();
+    if (eps && eps.length && !eps.some(e => e.number === currentEpisode)) currentEpisode = eps[0].number;
+    if (eps && !eps.length) episodesCache.delete(season.id);
+    refreshEpisodeUi();
+    return eps;
+}
+
+async function onEpisodeOrSeasonChange(e) {
+    const newSeason = parseInt($('seasonSelect').value, 10) || 1;
+    const seasonChanged = newSeason !== currentSeason;
+    currentSeason = newSeason;
+    if (seasonChanged) {
+        currentEpisode = 1;
+        await loadEpisodes();
+    } else {
+        currentEpisode = parseInt($('episodeSelect').value, 10) || 1;
+        refreshEpisodeUi();
+    }
     fetchAndRenderStreams();
 }
 
-function stepEpisode(delta) {
-    const next = currentEpisode + delta;
-    if (next < 1) return;
-    currentEpisode = next;
-    const sel = $('episodeSelect');
-    if (sel) {
-        if (![...sel.options].some(o => +o.value === next)) sel.add(new Option(next, next));
-        sel.value = String(next);
+// Posun o díl dopředu/dozadu, i přes hranici řady. Vrací false, když už další díl není.
+async function stepEpisode(delta) {
+    const seasons = currentMovieData && currentMovieData.seasons;
+    const eps = currentEpisodes();
+
+    if (seasons && eps && eps.length) {
+        const idx = eps.findIndex(e => e.number === currentEpisode);
+        const nextIdx = (idx === -1 ? 0 : idx) + delta;
+        if (nextIdx >= 0 && nextIdx < eps.length) {
+            currentEpisode = eps[nextIdx].number;
+        } else {
+            const sIdx = seasons.findIndex(s => s.number === currentSeason);
+            const target = seasons[sIdx + (delta > 0 ? 1 : -1)];
+            if (!target) return false;
+            currentSeason = target.number;
+            currentEpisode = delta > 0 ? 1 : Infinity;
+            const newEps = await loadEpisodes();
+            if (delta < 0) {
+                currentEpisode = newEps && newEps.length ? newEps[newEps.length - 1].number : 1;
+                refreshEpisodeUi();
+            }
+        }
+    } else {
+        const next = currentEpisode + delta;
+        if (next < 1) return false;
+        currentEpisode = next;
+        const sel = $('episodeSelect');
+        if (sel && ![...sel.options].some(o => +o.value === next)) sel.add(new Option(next, next));
     }
-    updateEpisodeButtons();
-    const title = $('sourcesTitle');
-    if (title) title.textContent = t('sourcesFor', { ep: episodeTag() });
-    return fetchAndRenderStreams();
+    refreshEpisodeUi();
+    await fetchAndRenderStreams();
+    return true;
 }
 
 function updateEpisodeButtons() {
     const prev = $('epPrev');
-    if (prev) prev.disabled = currentEpisode <= 1;
+    const next = $('epNext');
+    const seasons = currentMovieData && currentMovieData.seasons;
+    const eps = currentEpisodes();
+    if (seasons && eps && eps.length) {
+        const first = seasons[0].number === currentSeason && eps[0].number === currentEpisode;
+        const last = seasons[seasons.length - 1].number === currentSeason && eps[eps.length - 1].number === currentEpisode;
+        if (prev) prev.disabled = first;
+        if (next) next.disabled = last;
+    } else {
+        if (prev) prev.disabled = currentEpisode <= 1 && currentSeason <= 1;
+        if (next) next.disabled = false;
+    }
 }
 
 // =====================================================
@@ -924,7 +1054,9 @@ function openPlayer() {
     const m = currentMovieData;
     lastFocus = document.activeElement;
     P.title.textContent = m.title;
-    P.subtitle.textContent = m.isSeries ? t('seasonEp', { s: currentSeason, e: currentEpisode }) : (m.year && m.year !== '---' ? String(m.year) : '');
+    P.subtitle.textContent = m.isSeries
+        ? t('seasonEp', { s: currentSeason, e: currentEpisode }) + (currentEpisodeTitle() ? ` – ${currentEpisodeTitle()}` : '')
+        : (m.year && m.year !== '---' ? String(m.year) : '');
     P.next.hidden = !m.isSeries;
     P.qualityMenu.hidden = true;
 
@@ -1062,8 +1194,13 @@ async function playNextEpisode() {
     saveProgress(true);
     videoPlayer.pause();
     playerMessage(`<div class="spinner"></div><p class="player-msg">${t('findingNext')}</p>`);
-    await stepEpisode(1);
+    const moved = await stepEpisode(1);
     if (playerEl.hidden) return;
+    if (!moved) {
+        playerMessage(`<p class="player-msg">${t('lastEpisode')}</p><button class="btn" id="pTryOther">${t('backToDetail')}</button>`, true);
+        $('pTryOther').addEventListener('click', () => closePlayer());
+        return;
+    }
     if (activeStreams.length) {
         startStreaming(activeStreams[0]);
     } else {

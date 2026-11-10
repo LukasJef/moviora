@@ -380,6 +380,7 @@ app.get('/csfd-scrape', async (req, res) => {
         const descLower = String(description).toLowerCase();
 
         const isSeries =
+            typeLower === 'series' ||
             typeLower.includes('series') ||
             typeLower.includes('tv') ||
             typeLower.includes('show') ||
@@ -389,8 +390,15 @@ app.get('/csfd-scrape', async (req, res) => {
             descLower.includes('sezón') ||
             descLower.includes('seriál');
 
+        // Detail (details=1): navíc odkaz na IMDb a řady seriálu
+        const wantDetails = req.query.details === '1';
+        const [imdbUrl, seasons] = wantDetails
+            ? await Promise.all([resolveImdb(movie, isSeries).catch(() => null), Promise.resolve(isSeries ? mapSeasons(movie) : null)])
+            : [undefined, undefined];
+
         res.set('Cache-Control', 'public, max-age=3600');
         res.json({
+            ...(wantDetails ? { imdbUrl, seasons } : {}),
             poster: movie.poster || null,
             description: description,
             cast: movie.creators?.actors
@@ -402,6 +410,118 @@ app.get('/csfd-scrape', async (req, res) => {
             isSeries: Boolean(isSeries)
         });
 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
+// IMDb odkaz k filmu z ČSFD
+// 1) Wikidata (ČSFD ID → IMDb ID), 2) záloha: našeptávač IMDb podle názvu a roku
+// ==========================================
+const IMDB_TTL = 7 * 24 * 60 * 60 * 1000;
+const imdbCache = new Map();
+const EN_COUNTRIES = ['USA', 'Velká Británie', 'Kanada', 'Austrálie', 'Irsko', 'Nový Zéland'];
+
+async function fetchJson(url, headers = {}, timeout = 6000) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeout);
+    try {
+        const r = await fetch(url, { headers, signal: ctrl.signal });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return await r.json();
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function imdbFromWikidata(csfdId) {
+    const q = `SELECT ?imdb WHERE { ?item wdt:P2529 "${Number(csfdId)}"; wdt:P345 ?imdb. } LIMIT 1`;
+    const j = await fetchJson('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(q), {
+        'User-Agent': 'Moviora/1.0 (https://moviora.win)',
+        Accept: 'application/sparql-results+json'
+    });
+    const id = j?.results?.bindings?.[0]?.imdb?.value;
+    return /^tt\d+$/.test(id || '') ? id : null;
+}
+
+const normTitle = (t) => String(t || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+
+async function imdbFromSuggest(titles, year, isSeries) {
+    for (const title of titles) {
+        if (!title) continue;
+        const d = await fetchJson(`https://v3.sg.media-imdb.com/suggestion/x/${encodeURIComponent(title)}.json`, { 'User-Agent': 'Mozilla/5.0' });
+        const want = normTitle(title);
+        const hit = (d.d || []).find(x =>
+            /^tt\d+$/.test(x.id || '') &&
+            normTitle(x.l) === want &&
+            (!year || !x.y || Math.abs(x.y - year) <= 1) &&
+            (isSeries ? /series/i.test(x.qid || '') : !/series|episode/i.test(x.qid || ''))
+        );
+        if (hit) return hit.id;
+    }
+    return null;
+}
+
+async function resolveImdb(movie, isSeries) {
+    const key = movie.id;
+    const hit = imdbCache.get(key);
+    if (hit && Date.now() - hit.t < IMDB_TTL) return hit.url;
+
+    let id = null;
+    try { id = await imdbFromWikidata(movie.id); } catch { /* Wikidata nedostupná */ }
+    if (!id) {
+        const other = Array.isArray(movie.titlesOther) ? movie.titlesOther : [];
+        const english = other.filter(o => EN_COUNTRIES.includes(o.country)).map(o => o.title);
+        const rest = other.filter(o => !EN_COUNTRIES.includes(o.country) && o.country !== 'Slovensko').map(o => o.title);
+        const titles = [...new Set([...english, ...rest, movie.title])].slice(0, 3);
+        try { id = await imdbFromSuggest(titles, parseInt(movie.year, 10) || null, isSeries); } catch { /* IMDb nedostupné */ }
+    }
+    const url = id ? `https://www.imdb.com/title/${id}/` : null;
+    if (imdbCache.size > 5000) imdbCache.delete(imdbCache.keys().next().value);
+    imdbCache.set(key, { t: Date.now(), url });
+    return url;
+}
+
+// Řady a díly seriálu z ČSFD
+const numFrom = (text, fallback) => {
+    const m = String(text || '').match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : fallback;
+};
+
+function mapEpisodes(list) {
+    return (list || []).map((e, i) => {
+        const code = String(e.info || '').match(/S(\d+)E(\d+)/i);
+        return { id: e.id, number: code ? parseInt(code[2], 10) : i + 1, title: e.title || '' };
+    });
+}
+
+function mapSeasons(movie) {
+    if (Array.isArray(movie.seasons) && movie.seasons.length) {
+        return movie.seasons.map((s, i) => ({
+            id: s.id,
+            number: numFrom(s.title, i + 1),
+            title: s.title || '',
+            year: numFrom(s.info, null)
+        }));
+    }
+    // Seriál bez řad (minisérie) – díly přímo pod seriálem
+    if (Array.isArray(movie.episodes) && movie.episodes.length) {
+        return [{ id: movie.id, number: 1, title: '', year: parseInt(movie.year, 10) || null, episodes: mapEpisodes(movie.episodes) }];
+    }
+    return null;
+}
+
+// ==========================================
+// ENDPOINT: /csfd-episodes – díly jedné řady (id řady z /csfd-scrape)
+// ==========================================
+app.get('/csfd-episodes', async (req, res) => {
+    const id = parseInt(req.query.id, 10);
+    if (!id) return res.status(400).json({ error: "Chybí parametr 'id'" });
+    try {
+        const season = await csfdMovieCached(id);
+        res.set('Cache-Control', 'public, max-age=21600');
+        res.json({ episodes: mapEpisodes(season?.episodes) });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
