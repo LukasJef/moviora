@@ -1,8 +1,13 @@
 {
-  "name": "filmovy-web",
+  "name": "moviora-web",
   "version": "1.0.0",
   "private": true,
+  "description": "Frontend Moviory (Cloudflare Pages, výstupní složka public).",
+  "scripts": {
+    "postinstall": "npm run build",
+    "build": "esbuild public/app.js --target=chrome61 --outfile=public/app.legacy.js --log-level=warning"
+  },
   "dependencies": {
-    "node-csfd-api": "^5.5.0"
+    "esbuild": "^0.28.2"
   }
 }

@@ -7,6 +7,11 @@
     <title>Moviora</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Moviora">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
@@ -97,9 +102,20 @@
         }
         @media (hover: none), (max-width: 760px) { .search kbd { display: none; } }
 
+        /* Akce vpravo v liště */
+        .topbar-actions { flex: none; margin-left: auto; display: flex; align-items: center; gap: 10px; }
+        .install-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            min-height: 42px; padding: 0 14px;
+            border: 1px solid var(--line); border-radius: var(--radius-m);
+            background: var(--surface); font-weight: 700; font-size: 14px; white-space: nowrap;
+        }
+        .install-btn:hover { border-color: var(--muted); }
+        .install-btn svg { width: 18px; height: 18px; color: var(--red); }
+
         /* Přepínač jazyka stránky */
         .lang-switch {
-            flex: none; margin-left: auto; display: inline-flex; gap: 2px; padding: 3px;
+            flex: none; display: inline-flex; gap: 2px; padding: 3px;
             border: 1px solid var(--line); border-radius: var(--radius-m);
         }
         .lang-switch button {
@@ -467,6 +483,30 @@
         .player-msg { margin: 16px 0 0; font-size: 1.0625rem; }
         .player-msg + .btn { margin-top: 16px; }
 
+        /* ---------- Offline ---------- */
+        .offline { padding: clamp(40px, 12vh, 140px) 0 64px; max-width: 52ch; }
+        .offline-mark {
+            width: 8px; height: 88px; background: var(--red); margin-bottom: 28px;
+            animation: pulse 1.6s ease-in-out infinite; transform-origin: bottom;
+        }
+        .offline h1 {
+            font-size: clamp(2.5rem, 7vw, 5rem); line-height: .95; margin: 0 0 18px;
+            font-weight: 900; font-stretch: 70%; text-transform: uppercase; letter-spacing: -0.02em;
+        }
+        .offline p { color: var(--muted); font-size: 1.125rem; margin: 0 0 28px; }
+        .offline-actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .offline-status { color: var(--muted); font-size: 14px; }
+        body.is-offline > .topbar .search { opacity: .4; pointer-events: none; }
+        body.is-offline main > section:not(#offlineScreen) { display: none !important; }
+
+        .footer-btn {
+            display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; margin: -6px 0;
+            border: 1px solid transparent; border-radius: var(--radius-m);
+            background: none; color: var(--muted); font-size: 14px; font-weight: 600;
+        }
+        .footer-btn:hover { color: var(--text); border-color: var(--line); }
+        .footer-btn svg { width: 18px; height: 18px; }
+
         /* ---------- Patička ---------- */
         .site-footer {
             max-width: 1600px; margin: 0 auto;
@@ -499,6 +539,9 @@
             .brand img { height: 34px; }
             .topbar { gap: 10px; }
             .lang-switch button { min-width: 32px; }
+            .topbar-actions { gap: 6px; }
+            .install-btn { padding: 0 10px; min-height: 40px; }
+            .install-btn span { display: none; }
             .detail-hero { grid-template-columns: 1fr; }
             .detail-poster { width: 140px; }
             .detail-main { padding-left: 18px; }
@@ -509,6 +552,79 @@
             .poster-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 22px 14px; }
             .poster-row { grid-auto-columns: 128px; gap: 14px; }
             .btn-primary { flex: 1 1 100%; }
+        }
+
+        /* =====================================================
+           TV režim – ovládání šipkami, čitelné z gauče
+           ===================================================== */
+        html.tv { --gutter: 5vw; }               /* bezpečný okraj kvůli overscanu */
+        @media (min-width: 1400px) { html.tv body { zoom: 1.35; } }
+        html.tv .detail-title { font-size: 4.5rem; }
+        html.tv .intro h1, html.tv .offline h1 { font-size: 4rem; }
+        html.tv main { padding-top: 32px; padding-bottom: 96px; }
+        html.tv .search kbd,
+        html.tv .install-btn { display: none; }
+
+        /* Výrazný ukazatel výběru: bílý rámeček + červený playhead vlevo */
+        html.tv :focus { outline: none; }
+        html.tv .tv-focus {
+            outline: 4px solid var(--text) !important;
+            outline-offset: 4px;
+            box-shadow: 0 0 0 10px rgba(229, 9, 20, .35);
+        }
+        html.tv .poster.tv-focus { outline: none !important; box-shadow: none; }
+        html.tv .poster.tv-focus .poster-frame {
+            outline: 4px solid var(--text); outline-offset: 4px;
+            box-shadow: 0 0 0 10px rgba(229, 9, 20, .35), 0 24px 50px rgba(0,0,0,.7);
+            transform: scale(1.07);
+        }
+        html.tv .poster-frame { transition: transform .18s ease, box-shadow .18s ease; }
+        html.tv .poster.tv-focus .poster-title { color: var(--text); text-decoration: underline 3px var(--red); text-underline-offset: 6px; }
+
+        html.tv .poster-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 40px 28px; }
+        html.tv .poster-row { grid-auto-columns: 200px; gap: 28px; padding: 18px 18px 22px; margin: -18px -18px 0; scroll-padding: 0 18px; }
+        html.tv #favoritesGrid { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 200px; overflow-x: auto; padding: 18px; margin: -18px; }
+        html.tv .poster-grid { padding: 18px; margin: -18px; }
+
+        html.tv .source.tv-focus { outline-offset: -4px; box-shadow: none; background: rgba(229, 9, 20, .16); }
+        html.tv .btn, html.tv .segmented button, html.tv .icon-btn, html.tv .episode-picker select { min-height: 56px; font-size: 18px; }
+        html.tv .icon-btn { width: 56px; }
+        html.tv .episode-picker select.tv-editing { outline-color: var(--red) !important; }
+
+        /* Přehrávač na TV */
+        html.tv .p-btn { width: 56px; height: 56px; }
+        html.tv .p-btn svg { width: 30px; height: 30px; }
+        html.tv .seek { height: 40px; }
+        html.tv .seek-track { height: 6px; }
+        html.tv .seek.tv-focus { outline: none !important; box-shadow: none; }
+        html.tv .seek.tv-focus .seek-track { height: 10px; }
+        html.tv .seek.tv-focus .seek-head { height: 34px; width: 7px; }
+        html.tv .time { font-size: 18px; }
+        html.tv .player-heading strong { font-size: 2rem; }
+        html.tv .volume input { display: none; }
+
+        /* Nápověda k ovládání dálkovým ovladačem */
+        .tv-hint {
+            position: fixed; right: var(--gutter); bottom: 24px; z-index: 30;
+            display: none; gap: 20px; padding: 10px 16px; border-radius: var(--radius-m);
+            background: rgba(23,11,12,.9); border: 1px solid var(--line); color: var(--muted); font-size: 15px;
+        }
+        html.tv .tv-hint { display: flex; animation: hint-out .6s ease 7s forwards; }
+        @keyframes hint-out { to { opacity: 0; visibility: hidden; } }
+        html.tv body.player-open .tv-hint { display: none; }
+        .tv-hint kbd {
+            font: 700 13px var(--font); color: var(--text); border: 1px solid var(--muted);
+            border-radius: 4px; padding: 1px 7px; margin-right: 6px;
+        }
+
+        /* Starší prohlížeče (televize): bez aspect-ratio a inset */
+        @supports not (aspect-ratio: 2 / 3) {
+            .poster-frame { height: 0; padding-top: 150%; }
+            .poster-frame img { position: absolute; top: 0; left: 0; }
+            .detail-poster { height: auto; min-height: 270px; }
+        }
+        @supports not (inset: 0) {
+            .player, .player video, .player-chrome, .detail-backdrop, .detail-backdrop::after { top: 0; right: 0; bottom: 0; left: 0; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -527,13 +643,30 @@
             <input type="search" id="searchQuery" placeholder="Hledat film nebo seriál" data-i18n-placeholder="searchPlaceholder" autocomplete="off" enterkeyhint="search">
             <kbd aria-hidden="true">/</kbd>
         </form>
-        <div class="lang-switch" role="group" aria-label="Jazyk stránky" data-i18n-aria="uiLangGroup">
-            <button type="button" data-ui-lang="cs" aria-pressed="true" lang="cs" title="Čeština">CS</button>
-            <button type="button" data-ui-lang="en" aria-pressed="false" lang="en" title="English">EN</button>
+        <div class="topbar-actions">
+            <button type="button" class="install-btn" id="installBtn" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+                <span data-i18n="installApp">Stáhnout aplikaci</span>
+            </button>
+            <div class="lang-switch" role="group" aria-label="Jazyk stránky" data-i18n-aria="uiLangGroup">
+                <button type="button" data-ui-lang="cs" aria-pressed="true" lang="cs" title="Čeština">CS</button>
+                <button type="button" data-ui-lang="en" aria-pressed="false" lang="en" title="English">EN</button>
+            </div>
         </div>
     </header>
 
     <main id="main">
+        <!-- Server nebo připojení nedostupné -->
+        <section id="offlineScreen" class="offline" hidden aria-live="polite">
+            <div class="offline-mark" aria-hidden="true"></div>
+            <h1 id="offlineTitle" data-i18n="offlineTitle">Server je offline</h1>
+            <p id="offlineText" data-i18n="offlineText">Moviora se teď nemůže spojit se svým serverem. Jakmile bude zase dostupný, stránka se načte sama.</p>
+            <div class="offline-actions">
+                <button type="button" class="btn btn-primary" id="offlineRetry" data-i18n="retryNow">Zkusit znovu</button>
+                <span class="offline-status" id="offlineStatus"></span>
+            </div>
+        </section>
+
         <!-- Domů: rozkoukané a oblíbené -->
         <section id="libraryContainer">
             <div id="homeIntro" class="intro" hidden>
@@ -563,9 +696,13 @@
         </section>
     </main>
 
-    <footer class="site-footer" lang="en">
-        <p>Created by <a href="https://atrixx.org/" target="_blank" rel="noopener">Atrixx</a></p>
-        <p>This content was assisted in collaboration with <a href="https://claude.ai" target="_blank" rel="noopener">Claude (Anthropic)</a></p>
+    <footer class="site-footer">
+        <p lang="en">Created by <a href="https://atrixx.org/" target="_blank" rel="noopener">Atrixx</a></p>
+        <button type="button" class="footer-btn" id="tvToggle" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <span data-i18n="tvModeOn">Režim pro televizi</span>
+        </button>
+        <p lang="en">This content was assisted in collaboration with <a href="https://claude.ai" target="_blank" rel="noopener">Claude (Anthropic)</a></p>
     </footer>
 
     <!-- Přehrávač přes celou obrazovku -->
@@ -628,6 +765,14 @@
         </div>
     </div>
 
+    <dialog id="installDialog" class="notice" aria-labelledby="installTitle">
+        <h2 id="installTitle" data-i18n="installTitle">Nainstalovat Movioru</h2>
+        <p id="installText"></p>
+        <div class="notice-actions">
+            <button type="button" class="btn btn-primary" id="installClose" data-i18n="gotIt">Rozumím</button>
+        </div>
+    </dialog>
+
     <dialog id="foreignNotice" class="notice" aria-labelledby="noticeTitle" lang="en">
         <h2 id="noticeTitle">Moviora is made for Czech viewers</h2>
         <p>This site is built for people in the Czech Republic and Slovakia, so some things may not work as you’d expect.</p>
@@ -639,8 +784,23 @@
         </div>
     </dialog>
 
+    <div class="tv-hint" aria-hidden="true">
+        <span><kbd>← ↑ → ↓</kbd><span data-i18n="tvHintMove">pohyb</span></span>
+        <span><kbd>OK</kbd><span data-i18n="tvHintOk">vybrat</span></span>
+        <span><kbd>⟲</kbd><span data-i18n="tvHintBack">zpět</span></span>
+    </div>
+
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script src="app.js"></script>
+    <script>
+        // Moderní prohlížeče dostanou app.js, starší (např. v televizích) přeloženou app.legacy.js
+        (function () {
+            var modern = true;
+            try { new Function('var a = {}; return a?.b ?? 1;'); } catch (e) { modern = false; }
+            var s = document.createElement('script');
+            s.src = modern ? 'app.js' : 'app.legacy.js';
+            document.body.appendChild(s);
+        })();
+    </script>
 </body>
 </html>

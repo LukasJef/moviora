@@ -1,0 +1,16 @@
+# Závislosti
+node_modules/
+
+# Generuje se při sestavení (npm install v pages/)
+pages/public/app.legacy.js
+
+# Tajné údaje a lokální nastavení
+.env
+.env.*
+
+# Logy a systémové soubory
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+desktop.ini

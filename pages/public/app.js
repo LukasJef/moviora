@@ -52,8 +52,18 @@ function writeJSON(key, value) {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* plné úložiště */ }
 }
 
+// Stavy, které vrací Cloudflare, když VPS neodpovídá
+const OUTAGE_STATUSES = [502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 530];
+
 async function apiGet(path, options = {}) {
-    const res = await fetch(`${API_URL}${path}`, options);
+    let res;
+    try {
+        res = await fetch(`${API_URL}${path}`, options);
+    } catch (err) {
+        if (err.name !== 'AbortError') reportPossibleOutage();
+        throw err;
+    }
+    if (OUTAGE_STATUSES.includes(res.status)) reportPossibleOutage();
     let data = {};
     try { data = await res.json(); } catch { /* neplatná odpověď */ }
     if (!res.ok && !data.error) data.error = t('serverError', { s: res.status });
@@ -97,7 +107,22 @@ const I18N = {
         quality: 'Kvalita', qualityN: 'Kvalita {n}',
         playerLabel: 'Přehrávač', closePlayer: 'Zavřít přehrávač', seekLabel: 'Pozice ve videu',
         back10: 'Zpět o 10 sekund', fwd10: 'Vpřed o 10 sekund', volume: 'Hlasitost',
-        subtitles: 'Titulky', fullscreen: 'Celá obrazovka'
+        subtitles: 'Titulky', fullscreen: 'Celá obrazovka',
+        installApp: 'Stáhnout aplikaci', installTitle: 'Nainstalovat Movioru', gotIt: 'Rozumím',
+        installIos: 'V Safari klepni dole na tlačítko Sdílet a zvol „Přidat na plochu“. Moviora se pak otevře jako aplikace přes celou obrazovku.',
+        installMacSafari: 'V Safari zvol v menu Soubor položku „Přidat do Docku“.',
+        installFirefox: 'Firefox na počítači aplikace instalovat neumí. Otevři Movioru v Chrome nebo Edge a klikni na „Stáhnout aplikaci“.',
+        installGeneric: 'V menu prohlížeče zvol „Nainstalovat aplikaci“ nebo „Přidat na plochu“. V Chrome a Edge je na to i ikona vpravo v adresním řádku.',
+        installed: 'Moviora je nainstalovaná',
+        offlineTitle: 'Server je offline',
+        offlineText: 'Moviora se teď nemůže spojit se svým serverem. Jakmile bude zase dostupný, stránka se načte sama.',
+        offlineTitleNet: 'Jsi offline',
+        offlineTextNet: 'Zařízení není připojené k internetu. Až se připojení vrátí, Moviora pokračuje tam, kde jsi byl.',
+        retryNow: 'Zkusit znovu', retrying: 'Zkouším se připojit…', nextRetry: 'Další pokus za {s} s',
+        backOnline: 'Server je zase online',
+        tvModeOn: 'Režim pro televizi', tvModeOff: 'Vypnout režim pro televizi',
+        tvEnabled: 'Režim pro televizi zapnutý – ovládej šipkami', tvDisabled: 'Režim pro televizi vypnutý',
+        tvHintMove: 'pohyb', tvHintOk: 'vybrat', tvHintBack: 'zpět'
     },
     en: {
         homeLink: 'Moviora – home', uiLangGroup: 'Site language',
@@ -132,7 +157,22 @@ const I18N = {
         quality: 'Quality', qualityN: 'Quality {n}',
         playerLabel: 'Player', closePlayer: 'Close player', seekLabel: 'Video position',
         back10: 'Back 10 seconds', fwd10: 'Forward 10 seconds', volume: 'Volume',
-        subtitles: 'Subtitles', fullscreen: 'Full screen'
+        subtitles: 'Subtitles', fullscreen: 'Full screen',
+        installApp: 'Download app', installTitle: 'Install Moviora', gotIt: 'Got it',
+        installIos: 'In Safari, tap the Share button at the bottom and choose “Add to Home Screen”. Moviora then opens full screen like an app.',
+        installMacSafari: 'In Safari, choose File → “Add to Dock”.',
+        installFirefox: 'Firefox on desktop can’t install apps. Open Moviora in Chrome or Edge and click “Download app”.',
+        installGeneric: 'In your browser menu, choose “Install app” or “Add to Home screen”. Chrome and Edge also show an install icon on the right of the address bar.',
+        installed: 'Moviora is installed',
+        offlineTitle: 'The server is offline',
+        offlineText: 'Moviora can’t reach its server right now. The page reloads by itself as soon as the server is back.',
+        offlineTitleNet: 'You’re offline',
+        offlineTextNet: 'This device isn’t connected to the internet. When the connection is back, Moviora picks up where you were.',
+        retryNow: 'Try again', retrying: 'Connecting…', nextRetry: 'Next try in {s} s',
+        backOnline: 'The server is back online',
+        tvModeOn: 'TV mode', tvModeOff: 'Turn off TV mode',
+        tvEnabled: 'TV mode on – use the arrow keys', tvDisabled: 'TV mode off',
+        tvHintMove: 'move', tvHintOk: 'select', tvHintBack: 'back'
     }
 };
 
@@ -329,10 +369,15 @@ window.addEventListener('popstate', (e) => {
         closePlayer(true);
         return;
     }
-    if (state.view === 'results') return search(state.q, false);
+    renderRoute(state);
+});
+
+function renderRoute(state) {
+    state = state || { view: 'home' };
+    if (state.view === 'results' && state.q) return search(state.q, false);
     if (state.view === 'detail' && state.movie) return openMovieDetail(state.movie, false);
     showMainPage(false);
-});
+}
 
 // =====================================================
 // Vyhledávání
@@ -380,6 +425,7 @@ async function search(rawQuery, push = true) {
             return;
         }
         renderGrid(data.results, resultsDiv, { lazyPosters: true });
+        tvFocusFirst('#results .poster', true);
     } catch {
         resultsDiv.innerHTML = `<p class="status error">${t('serverDown')}</p>`;
     }
@@ -587,6 +633,7 @@ function renderDetail() {
         $('epNext').addEventListener('click', () => stepEpisode(1));
         updateEpisodeButtons();
     }
+    tvFocusFirst('#playBtn:not([disabled]), .segmented button[aria-pressed="true"]', true);
 }
 
 function range(from, to) {
@@ -720,6 +767,8 @@ function renderSources() {
     }
 
     setPlayButton('ready');
+    // Na TV po načtení zdrojů skočit na Přehrát, pokud uživatel ještě nic nevybral
+    if (isTv() && document.activeElement?.closest('.segmented')) tvFocus($('playBtn'));
     $('sourcesCount').textContent = filesCount(activeStreams.length);
 
     const wanted = selectedLanguage === 'cz' ? ['CZ', 'SK'] : ['EN', 'TIT'];
@@ -754,7 +803,10 @@ function renderSources() {
         </div>`;
 
     body.querySelectorAll('.source').forEach(btn => {
-        btn.addEventListener('click', () => selectSource(+btn.dataset.idx));
+        btn.addEventListener('click', () => {
+            selectSource(+btn.dataset.idx);
+            if (isTv()) startStreaming(); // na TV OK na zdroji rovnou přehraje
+        });
         btn.addEventListener('dblclick', () => { selectSource(+btn.dataset.idx); startStreaming(); });
     });
     $('moreSources')?.addEventListener('click', () => { showAllSources = true; renderSources(); });
@@ -885,7 +937,8 @@ function openPlayer() {
     updatePlayButton();
     updateMuteButton();
     wakeControls();
-    P.play.focus({ preventScroll: true });
+    // Na TV začíná výběr na časové ose: šipky do stran rovnou přetáčí
+    (isTv() ? P.seek : P.play).focus({ preventScroll: true });
 }
 
 function closePlayer(fromPopState = false) {
@@ -1199,6 +1252,7 @@ function loadLibrary() {
 
     if (history.length) renderGrid(history, $('historyGrid'));
     if (favorites.length) renderGrid(favorites, $('favoritesGrid'));
+    tvFocusFirst('#historyGrid .poster, #favoritesGrid .poster, #searchQuery', true);
 }
 
 // Do knihovny ukládáme jen to, co je potřeba pro kartu a detail
@@ -1253,6 +1307,8 @@ function setUiLang(lang) {
     uiLang = lang;
     writeJSON('ui_lang', lang);
     applyStaticI18n();
+    setTvMode(isTv());
+    updateOfflineTexts();
 
     // Překreslit, co je zrovna vidět
     if (!movieDetail.hidden && currentMovieData && $('playBtn')) {
@@ -1289,6 +1345,377 @@ function maybeShowForeignNotice() {
 }
 
 // =====================================================
+// Výpadek serveru / připojení
+// =====================================================
+const offlineScreen = $('offlineScreen');
+let offlineKind = null;          // null | 'server' | 'network'
+let retryTimer = null;
+let retryCountdown = null;
+let checkingServer = false;
+
+async function checkServer() {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try {
+        const res = await fetch(`${API_URL}/health`, { cache: 'no-store', signal: ctrl.signal });
+        // 404 = starší server bez /health, ale odpovídá → online
+        return !OUTAGE_STATUSES.includes(res.status);
+    } catch {
+        return false;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function reportPossibleOutage() {
+    if (offlineKind || checkingServer) return;
+    checkingServer = true;
+    const ok = navigator.onLine !== false && await checkServer();
+    checkingServer = false;
+    if (!ok) showOffline(navigator.onLine === false ? 'network' : 'server');
+}
+
+function showOffline(kind) {
+    const first = !offlineKind;
+    offlineKind = kind;
+    document.body.classList.add('is-offline');
+    offlineScreen.hidden = false;
+    libraryContainer.hidden = true;
+    resultsContainer.hidden = true;
+    movieDetail.hidden = true;
+    updateOfflineTexts();
+    if (first) {
+        if (!playerEl.hidden) closePlayer();
+        window.scrollTo(0, 0);
+        scheduleRetry(10);
+        tvFocusFirst('#offlineRetry', true);
+    }
+}
+
+function updateOfflineTexts() {
+    if (!offlineKind) return;
+    const net = offlineKind === 'network';
+    $('offlineTitle').textContent = t(net ? 'offlineTitleNet' : 'offlineTitle');
+    $('offlineText').textContent = t(net ? 'offlineTextNet' : 'offlineText');
+}
+
+function scheduleRetry(seconds) {
+    clearTimeout(retryTimer);
+    clearInterval(retryCountdown);
+    let left = seconds;
+    const status = $('offlineStatus');
+    status.textContent = t('nextRetry', { s: left });
+    retryCountdown = setInterval(() => {
+        left = Math.max(0, left - 1);
+        status.textContent = t('nextRetry', { s: left });
+    }, 1000);
+    retryTimer = setTimeout(retryConnection, seconds * 1000);
+}
+
+async function retryConnection() {
+    clearTimeout(retryTimer);
+    clearInterval(retryCountdown);
+    $('offlineStatus').textContent = t('retrying');
+    if (navigator.onLine !== false && await checkServer()) {
+        hideOffline();
+    } else {
+        showOffline(navigator.onLine === false ? 'network' : 'server');
+        scheduleRetry(15);
+    }
+}
+
+function hideOffline() {
+    if (!offlineKind) return;
+    offlineKind = null;
+    clearTimeout(retryTimer);
+    clearInterval(retryCountdown);
+    document.body.classList.remove('is-offline');
+    offlineScreen.hidden = true;
+    toast(t('backOnline'), 2500);
+    renderRoute(history.state);   // znovu načíst, co bylo otevřené
+}
+
+$('offlineRetry').addEventListener('click', retryConnection);
+window.addEventListener('offline', () => showOffline('network'));
+window.addEventListener('online', () => { if (offlineKind) retryConnection(); });
+
+// =====================================================
+// Instalace aplikace (PWA)
+// =====================================================
+const installBtn = $('installBtn');
+let deferredInstall = null;
+
+const IS_STANDALONE = window.matchMedia('(display-mode: standalone)').matches
+    || window.matchMedia('(display-mode: window-controls-overlay)').matches
+    || window.navigator.standalone === true;
+
+function installHelpText() {
+    const ua = navigator.userAgent;
+    const ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (ios) return t('installIos');
+    if (/Firefox\//.test(ua) && !/Android/.test(ua)) return t('installFirefox');
+    if (/Macintosh/.test(ua) && /Safari\//.test(ua) && !/Chrome|Chromium|Edg\//.test(ua)) return t('installMacSafari');
+    return t('installGeneric');
+}
+
+installBtn.addEventListener('click', async () => {
+    if (deferredInstall) {
+        deferredInstall.prompt();
+        const choice = await deferredInstall.userChoice.catch(() => null);
+        deferredInstall = null;
+        if (choice && choice.outcome === 'accepted') installBtn.hidden = true;
+        return;
+    }
+    $('installText').textContent = installHelpText();
+    const dlg = $('installDialog');
+    if (typeof dlg.showModal === 'function') { dlg.showModal(); tvFocus($('installClose')); }
+    else toast(installHelpText(), 8000);
+});
+$('installClose').addEventListener('click', () => $('installDialog').close());
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstall = e;
+    if (!IS_STANDALONE) installBtn.hidden = false;
+});
+window.addEventListener('appinstalled', () => {
+    deferredInstall = null;
+    installBtn.hidden = true;
+    toast(t('installed'), 3000);
+});
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => { /* bez SW web funguje dál */ });
+    });
+}
+
+// =====================================================
+// Režim pro televizi – ovládání šipkami (prostorová navigace)
+// =====================================================
+const TV_UA = /SMART-?TV|SmartTV|Tizen|Web0S|webOS|NetCast|BRAVIA|Android TV|GoogleTV|AFT[A-Z]|HbbTV|Roku|Viera|VIDAA|Hisense|Philips|PhilipsTV|Opera TV|NETTV|CrKey|AppleTV|Xbox|PlayStation/i;
+const KEY = {
+    left: [37, 'ArrowLeft', 'Left'], up: [38, 'ArrowUp', 'Up'], right: [39, 'ArrowRight', 'Right'], down: [40, 'ArrowDown', 'Down'],
+    ok: [13, 'Enter'],
+    back: [27, 461, 10009, 'Escape', 'GoBack', 'BrowserBack', 'XF86Back'],
+    playPause: [179, 10252, 'MediaPlayPause'], play: [415, 'MediaPlay'], pause: [19, 'MediaPause'],
+    ff: [417, 'MediaFastForward'], rew: [412, 'MediaRewind'], stop: [413, 'MediaStop'], next: [176, 'MediaTrackNext']
+};
+function keyIs(e, name) { return KEY[name].includes(e.key) || KEY[name].includes(e.keyCode); }
+
+function isTv() { return document.documentElement.classList.contains('tv'); }
+
+function initialTvMode() {
+    const param = new URLSearchParams(location.search).get('tv');
+    if (param === '1' || param === '0') writeJSON('tv_mode', param === '1');
+    const saved = readJSON('tv_mode', null);
+    if (typeof saved === 'boolean') return saved;
+    return TV_UA.test(navigator.userAgent);
+}
+
+function setTvMode(on, announce = false) {
+    document.documentElement.classList.toggle('tv', on);
+    const btn = $('tvToggle');
+    btn.setAttribute('aria-pressed', String(on));
+    btn.querySelector('span').textContent = t(on ? 'tvModeOff' : 'tvModeOn');
+    if (announce) {
+        writeJSON('tv_mode', on);
+        toast(t(on ? 'tvEnabled' : 'tvDisabled'), 3000);
+        if (on) tvFocusFirst('#main .poster, #playBtn, #searchQuery', true);
+    }
+}
+$('tvToggle').addEventListener('click', () => setTvMode(!isTv(), true));
+
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex="0"]';
+
+function isVisible(el) {
+    if (!el || el === document.body || !el.getClientRects().length) return false;
+    const st = getComputedStyle(el);
+    return st.visibility !== 'hidden';
+}
+
+function focusScope() {
+    const dlg = document.querySelector('dialog[open]');
+    if (dlg) return dlg;
+    if (!playerEl.hidden) return playerEl;
+    return document.body;
+}
+
+function focusCandidates() {
+    const scope = focusScope();
+    return Array.from(scope.querySelectorAll(FOCUSABLE)).filter(el =>
+        isVisible(el) && !el.closest('[hidden]') && (scope !== document.body || !playerEl.contains(el)));
+}
+
+function tvFocus(el) {
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    if (!isTv()) return;
+    // posunout jen obsah, ne lištu nahoře
+    if (!el.closest('.topbar') && !el.closest('.player')) {
+        const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        try { el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: smooth ? 'smooth' : 'auto' }); }
+        catch { el.scrollIntoView(false); }
+    }
+}
+
+// Na TV po změně obrazovky přesunout výběr na první rozumný prvek
+function tvFocusFirst(selector, onlyIfLost = false) {
+    if (!isTv()) return;
+    const active = document.activeElement;
+    if (onlyIfLost && isVisible(active) && active !== document.body && focusScope().contains(active)
+        && !active.closest('[hidden]')) return;
+    const el = Array.from(document.querySelectorAll(selector)).find(n => isVisible(n) && !n.closest('[hidden]'));
+    if (el) tvFocus(el);
+}
+
+// Najde nejbližší prvek ve směru šipky
+function moveFocus(dir) {
+    const cands = focusCandidates();
+    if (!cands.length) return;
+    const cur = document.activeElement;
+    if (!cands.includes(cur)) { tvFocus(cands[0]); return; }
+
+    const r = cur.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    let best = null, bestScore = Infinity;
+
+    for (const el of cands) {
+        if (el === cur || el.contains(cur) || cur.contains(el)) continue;
+        const c = el.getBoundingClientRect();
+        const ex = c.left + c.width / 2, ey = c.top + c.height / 2;
+        let primary, overlapGap;
+        if (dir === 'right') { if (ex <= cx + 1 || c.left < r.left + 1) continue; primary = Math.max(0, c.left - r.right); overlapGap = Math.max(0, Math.max(r.top, c.top) - Math.min(r.bottom, c.bottom)); }
+        if (dir === 'left')  { if (ex >= cx - 1 || c.right > r.right - 1) continue; primary = Math.max(0, r.left - c.right); overlapGap = Math.max(0, Math.max(r.top, c.top) - Math.min(r.bottom, c.bottom)); }
+        if (dir === 'down')  { if (ey <= cy + 1 || c.top < r.top + 1) continue; primary = Math.max(0, c.top - r.bottom); overlapGap = Math.max(0, Math.max(r.left, c.left) - Math.min(r.right, c.right)); }
+        if (dir === 'up')    { if (ey >= cy - 1 || c.bottom > r.bottom - 1) continue; primary = Math.max(0, r.top - c.bottom); overlapGap = Math.max(0, Math.max(r.left, c.left) - Math.min(r.right, c.right)); }
+        const centerOffset = (dir === 'left' || dir === 'right') ? Math.abs(ey - cy) : Math.abs(ex - cx);
+        const score = primary + overlapGap * 4 + centerOffset * 0.1;
+        if (score < bestScore) { bestScore = score; best = el; }
+    }
+    if (best) tvFocus(best);
+}
+
+// Viditelný rámeček kolem vybraného prvku (bez :focus-visible kvůli starším TV)
+document.addEventListener('focusin', (e) => {
+    document.querySelectorAll('.tv-focus').forEach(n => n.classList.remove('tv-focus'));
+    if (isTv() && e.target && e.target.classList) e.target.classList.add('tv-focus');
+});
+document.addEventListener('focusout', (e) => {
+    if (e.target && e.target.classList) e.target.classList.remove('tv-focus');
+});
+
+function tvBack() {
+    const dlg = document.querySelector('dialog[open]');
+    if (dlg) { dlg.close(); return true; }
+    if (!playerEl.hidden) { closePlayer(); return true; }
+    const view = history.state && history.state.view;
+    if (view && view !== 'home') { history.back(); return true; }
+    return false; // domovská obrazovka – nechat TV, ať aplikaci zavře
+}
+
+function handleTvPlayerKey(e) {
+    const idle = playerEl.classList.contains('idle');
+    const active = document.activeElement;
+    const onSeek = active === P.seek;
+    const inMenu = !P.qualityMenu.hidden && P.qualityMenu.contains(active);
+    const dir = keyIs(e, 'left') ? 'left' : keyIs(e, 'right') ? 'right' : keyIs(e, 'up') ? 'up' : keyIs(e, 'down') ? 'down' : null;
+
+    if (keyIs(e, 'playPause')) { togglePlay(); return true; }
+    if (keyIs(e, 'play')) { videoPlayer.play().catch(() => {}); return true; }
+    if (keyIs(e, 'pause')) { videoPlayer.pause(); return true; }
+    if (keyIs(e, 'ff')) { skip(30); return true; }
+    if (keyIs(e, 'rew')) { skip(-30); return true; }
+    if (keyIs(e, 'next')) { if (!P.next.hidden) playNextEpisode(); return true; }
+    if (keyIs(e, 'stop')) { closePlayer(); return true; }
+
+    if (keyIs(e, 'back')) {
+        if (!P.qualityMenu.hidden) { P.qualityMenu.hidden = true; P.quality.setAttribute('aria-expanded', 'false'); tvFocus(P.quality); return true; }
+        closePlayer();
+        return true;
+    }
+
+    if (keyIs(e, 'ok')) {
+        // Tlačítka v přehrávači se stisknou sama, jinde OK = pauza/přehrát
+        if (idle || onSeek || !active || active === document.body || active === videoPlayer) {
+            togglePlay();
+            wakeControls();
+            return true;
+        }
+        return false;
+    }
+
+    if (dir) {
+        // Skryté ovládání nebo výběr na časové ose: šipky do stran přetáčí
+        if ((dir === 'left' || dir === 'right') && (idle || onSeek || !playerEl.contains(active))) {
+            skip(dir === 'left' ? -10 : 10);
+            if (!onSeek) tvFocus(P.seek);
+            return true;
+        }
+        if (idle || !playerEl.contains(active)) {
+            wakeControls();
+            tvFocus(dir === 'down' ? P.play : P.seek);
+            return true;
+        }
+        if (inMenu || playerEl.contains(active)) {
+            moveFocus(dir);
+            wakeControls();
+            return true;
+        }
+    }
+    return false;
+}
+
+document.addEventListener('keydown', (e) => {
+    if (!isTv() || e.ctrlKey || e.metaKey || e.altKey) return;
+
+    const done = () => { e.preventDefault(); e.stopImmediatePropagation(); };
+    const active = document.activeElement;
+    const tag = active && active.tagName;
+
+    if (!playerEl.hidden) {
+        if (handleTvPlayerKey(e)) done();
+        return;
+    }
+
+    // Výběr řady/dílu: OK přepne do úprav, šipky nahoru/dolů mění hodnotu
+    if (tag === 'SELECT') {
+        if (active.classList.contains('tv-editing')) {
+            if (keyIs(e, 'up') || keyIs(e, 'down')) {
+                const step = keyIs(e, 'up') ? -1 : 1;
+                const i = Math.max(0, Math.min(active.options.length - 1, active.selectedIndex + step));
+                if (i !== active.selectedIndex) { active.selectedIndex = i; active.dispatchEvent(new Event('change', { bubbles: true })); }
+                return done();
+            }
+            if (keyIs(e, 'ok') || keyIs(e, 'back') || keyIs(e, 'left') || keyIs(e, 'right')) {
+                active.classList.remove('tv-editing');
+                if (keyIs(e, 'left') || keyIs(e, 'right')) moveFocus(keyIs(e, 'left') ? 'left' : 'right');
+                return done();
+            }
+        } else if (keyIs(e, 'ok')) {
+            active.classList.add('tv-editing');
+            return done();
+        }
+    }
+
+    // Vyhledávací pole: šipky do stran posouvají kurzor v textu
+    if (tag === 'INPUT') {
+        if (keyIs(e, 'left') || keyIs(e, 'right')) return;
+        if (keyIs(e, 'back') && e.key === 'Backspace') return;
+    }
+
+    if (keyIs(e, 'back')) {
+        if (e.key === 'Backspace' && (tag === 'INPUT' || tag === 'TEXTAREA')) return;
+        if (tvBack()) done();
+        return;
+    }
+    if (keyIs(e, 'left')) { moveFocus('left'); return done(); }
+    if (keyIs(e, 'right')) { moveFocus('right'); return done(); }
+    if (keyIs(e, 'up')) { moveFocus('up'); return done(); }
+    if (keyIs(e, 'down')) { moveFocus('down'); return done(); }
+}, true);
+
+// =====================================================
 // Start
 // =====================================================
 (function init() {
@@ -1296,7 +1723,14 @@ function maybeShowForeignNotice() {
     const savedAudio = readJSON('lang', null);
     selectedLanguage = savedAudio === 'en' || savedAudio === 'cz' ? savedAudio : (BROWSER_CZSK ? 'cz' : 'en');
     applyStaticI18n();
-    maybeShowForeignNotice();
+    setTvMode(initialTvMode());
+    if (!isTv()) maybeShowForeignNotice();
+
+    // Tlačítko "Stáhnout aplikaci": ne v nainstalované aplikaci a ne na TV
+    installBtn.hidden = IS_STANDALONE || isTv();
+
+    if (navigator.onLine === false) showOffline('network');
+    else checkServer().then(ok => { if (!ok) showOffline('server'); });
 
     const vol = readJSON('volume', null);
     if (typeof vol === 'number') videoPlayer.volume = Math.max(0, Math.min(1, vol));
