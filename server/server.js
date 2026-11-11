@@ -60,28 +60,59 @@ app.get('/health', (req, res) => {
 // ==========================================
 const CSFD_TTL = 24 * 60 * 60 * 1000;
 const CSFD_MAX_CACHE = 2000;
-const CSFD_CONCURRENCY = 3;
 const csfdCache = new Map();
 const csfdInflight = new Map();
-let csfdActive = 0;
-const csfdQueue = [];
 
-function csfdSlot() {
-    if (csfdActive < CSFD_CONCURRENCY) { csfdActive++; return Promise.resolve(); }
-    return new Promise(resolve => csfdQueue.push(resolve));
+// Dvě fronty: dotazy uživatelů (rychlé) a úlohy na pozadí (pomalé, nesmí je brzdit)
+function makeLimiter(max) {
+    let active = 0;
+    const queue = [];
+    return {
+        acquire() {
+            if (active < max) { active++; return Promise.resolve(); }
+            return new Promise(resolve => queue.push(resolve));
+        },
+        release() {
+            const next = queue.shift();
+            if (next) next(); else active--;
+        }
+    };
 }
-function csfdRelease() {
-    const next = csfdQueue.shift();
-    if (next) next(); else csfdActive--;
+const csfdUserLimiter = makeLimiter(4);
+const csfdBackgroundLimiter = makeLimiter(2);
+
+// Anglický, případně původní název z „dalších názvů“ na ČSFD
+const EN_TITLE_COUNTRIES = ['USA', 'Velká Británie', 'Kanada', 'Austrálie', 'Irsko', 'Nový Zéland'];
+function enTitleOf(movie) {
+    const others = Array.isArray(movie?.titlesOther) ? movie.titlesOther : [];
+    const english = others.find(o => EN_TITLE_COUNTRIES.includes(o.country));
+    if (english) return english.title;
+    const origin = Array.isArray(movie?.origins) ? movie.origins[0] : null;
+    if (origin && origin !== 'Česko' && origin !== 'Slovensko' && origin !== 'Československo') {
+        const original = others.find(o => o.country === origin);
+        if (original) return original.title;
+    }
+    return null;
 }
 
-async function csfdMovieCached(id) {
+// Explicitní obsah = skutečná pornografie (ČSFD žánr „Pornografický“).
+// Dokumenty o pornu apod. mají jiný žánr a zůstávají dostupné.
+const EXPLICIT_GENRES = ['Pornografický'];
+const isExplicit = (movie) => Array.isArray(movie?.genres) && movie.genres.some(g => EXPLICIT_GENRES.includes(g));
+function cachedMovie(id) {
+    const hit = csfdCache.get(Number(id));
+    return hit ? hit.movie : null;
+}
+
+async function csfdMovieCached(id, { background = false } = {}) {
+    id = Number(id);
     const hit = csfdCache.get(id);
     if (hit && Date.now() - hit.t < CSFD_TTL) return hit.movie;
     if (csfdInflight.has(id)) return csfdInflight.get(id);
 
+    const limiter = background ? csfdBackgroundLimiter : csfdUserLimiter;
     const job = (async () => {
-        await csfdSlot();
+        await limiter.acquire();
         try {
             let lastErr;
             for (let attempt = 0; attempt < 3; attempt++) {
@@ -97,7 +128,7 @@ async function csfdMovieCached(id) {
             }
             throw lastErr;
         } finally {
-            csfdRelease();
+            limiter.release();
             csfdInflight.delete(id);
         }
     })();
@@ -241,7 +272,12 @@ app.get('/search', async (req, res) => {
             fetch(IMDB_API, { headers: { 'User-Agent': 'Mozilla/5.0' } }).then(r => r.json()).catch(() => null)
         ]);
 
-        const csfdItems = (csfdRes.status === 'fulfilled' && csfdRes.value?.movies) ? csfdRes.value.movies : [];
+        const csfdValue = csfdRes.status === 'fulfilled' ? csfdRes.value : null;
+        const csfdItems = [
+            ...((csfdValue?.movies) || []).map(m => ({ ...m, isSeries: false })),
+            // seriály, ale ne samostatné řady a díly
+            ...((csfdValue?.tvSeries) || []).filter(m => String(m.type || '').toLowerCase() === 'series').map(m => ({ ...m, isSeries: true }))
+        ].filter(m => !isExplicit(cachedMovie(m.id)));
         const czdbItems = (czdbRes.status === 'fulfilled' && czdbRes.value?.results) ? czdbRes.value.results : [];
         const imdbResults = (imdbRes.status === 'fulfilled' && imdbRes.value?.description) ? imdbRes.value.description : [];
 
@@ -275,6 +311,8 @@ app.get('/search', async (req, res) => {
                 poster: csfdMovie.poster || (matchedImdb ? matchedImdb["#IMG_POSTER"] : ''),
                 actors: matchedImdb ? matchedImdb["#ACTORS"] : '',
                 source: 'csfd',
+                isSeries: Boolean(csfdMovie.isSeries),
+                titleEn: enTitleOf(cachedMovie(csfdMovie.id)) || (matchedImdb ? matchedImdb["#TITLE"] : null),
                 imdbLink: matchedImdb ? (matchedImdb["#IMDB_URL"] || `https://www.imdb.com/title/${matchedImdb["#IMDB_ID"]}`) : null,
                 csfdLink: csfdMovie.url || (csfdMovie.id ? `https://www.csfd.cz/film/${csfdMovie.id}` : null),
                 csfd_url: csfdMovie.url || (csfdMovie.id ? `https://www.csfd.cz/film/${csfdMovie.id}` : null)
@@ -352,7 +390,20 @@ app.get('/search', async (req, res) => {
             });
         });
 
-        res.json({ results: finalResults.slice(0, 20) });
+        // Zjistit žánry výsledků z ČSFD (s časovým limitem) a vyřadit pornografii hned na serveru.
+        // Co se nestihne, dofiltruje web po načtení plakátu.
+        const top = finalResults.slice(0, 20);
+        const csfdIdOf = (r) => { const m = String(r.csfd_url || r.csfdLink || '').match(/\/film\/(\d+)/); return m ? +m[1] : null; };
+        const ids = [...new Set(top.map(csfdIdOf).filter(Boolean))];
+        await Promise.race([
+            Promise.allSettled(ids.map(id => csfdMovieCached(id))),
+            new Promise(r => setTimeout(r, 2000))
+        ]);
+        const results = top.filter(r => !isExplicit(cachedMovie(csfdIdOf(r))));
+        for (const r of results) {
+            if (!r.titleEn) r.titleEn = enTitleOf(cachedMovie(csfdIdOf(r))) || null;
+        }
+        res.json({ results });
 
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -410,7 +461,9 @@ app.get('/csfd-scrape', async (req, res) => {
             genres: movie.genres ? movie.genres.join(', ') : "Neznámý žánr",
             rating: movie.rating || null,
             duration: movie.duration || null, // délka v minutách – frontend podle ní řadí streamy
-            isSeries: Boolean(isSeries)
+            isSeries: Boolean(isSeries),
+            titleEn: enTitleOf(movie),
+            explicit: isExplicit(movie)
         });
 
     } catch (err) {
@@ -594,6 +647,7 @@ function parseFilmArticles(html, { isSeries = false, excludeShorts = true, exclu
 
         if (excludeShorts && genres.includes('Krátkometrážní')) continue;
         if (excludeDocs && genres.includes('Dokumentární')) continue;
+        if (genres.some(g => EXPLICIT_GENRES.includes(g))) continue;
         if (imgM && /\/assets\/images\/|poster-free|no-poster/.test(imgM[1])) imgM[1] = '';
 
         seen.add(id);
@@ -651,6 +705,38 @@ async function buildDiscover() {
 }
 
 let discoverData = null;
+
+// Doplní anglické/původní názvy (a vyřadí explicitní obsah) – stahuje detaily z ČSFD postupně na pozadí
+async function enrichItems(items) {
+    let changed = false;
+    await Promise.all(items.map(async (item) => {
+        if (item.enriched) return;
+        try {
+            const m = await csfdMovieCached(item.id, { background: true });
+            item.titleEn = enTitleOf(m);
+            if (isExplicit(m)) item.explicit = true;
+            item.enriched = true;
+            changed = true;
+        } catch { /* zkusí se příště */ }
+    }));
+    return changed;
+}
+let enriching = false;
+async function enrichDiscover() {
+    if (enriching || !discoverData) return;
+    enriching = true;
+    try {
+        for (const sec of discoverData.sections) {
+            if (await enrichItems(sec.items)) {
+                sec.items = sec.items.filter(i => !i.explicit);
+                await saveDiscoverToDisk();
+            }
+        }
+        console.log('🔤 Anglické názvy v nabídce doplněny');
+    } finally {
+        enriching = false;
+    }
+}
 let discoverRefreshing = null;
 const genreCache = new Map();
 
@@ -674,6 +760,7 @@ function refreshDiscover() {
     discoverRefreshing = buildDiscover()
         .then(async data => {
             discoverData = data;
+            enrichDiscover().catch(() => {});
             await saveDiscoverToDisk();
             console.log('🔄 Nabídka z ČSFD obnovena:', data.sections.map(s => `${s.id}=${s.items.length}`).join(', '));
             return data;
@@ -710,6 +797,11 @@ app.get('/discover/genre', async (req, res) => {
             if (items.length || !entry) entry = { updated: new Date().toISOString(), items };
             genreCache.set(key, entry);
             saveDiscoverToDisk();
+            // anglické názvy doplnit na pozadí, příští dotaz je už dostane
+            const e = entry;
+            enrichItems(e.items).then(changed => {
+                if (changed) { e.items = e.items.filter(i => !i.explicit); saveDiscoverToDisk(); }
+            }).catch(() => {});
         }
         res.set('Cache-Control', 'public, max-age=1800');
         res.json(entry);
@@ -737,7 +829,7 @@ app.get('/csfd-similar', async (req, res) => {
             try {
                 const m = await csfdMovieCached(s.id);
                 const type = String(m.type || '').toLowerCase();
-                if (type === 'season' || type === 'episode') return null;
+                if (type === 'season' || type === 'episode' || isExplicit(m)) return null;
                 return {
                     id: s.id,
                     title: m.title || s.title,
@@ -746,6 +838,7 @@ app.get('/csfd-similar', async (req, res) => {
                     genres: Array.isArray(m.genres) ? m.genres : [],
                     rating: m.rating || null,
                     isSeries: type === 'series',
+                    titleEn: enTitleOf(m),
                     csfdUrl: `${CSFD_BASE}/film/${s.id}/prehled/`
                 };
             } catch { return null; }
@@ -762,6 +855,7 @@ app.get('/csfd-similar', async (req, res) => {
 // Nabídka: načíst z disku, obnovit při startu, když je stará, a pak každou hodinu zkontrolovat
 loadDiscoverFromDisk().then(() => {
     if (!discoverData || isStale(discoverData.updated)) refreshDiscover().catch(() => {});
+    else enrichDiscover().catch(() => {});
 });
 setInterval(() => {
     if (!discoverData || isStale(discoverData.updated)) refreshDiscover().catch(() => {});

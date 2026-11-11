@@ -133,7 +133,9 @@ const I18N = {
         exitFullscreen: 'Ukončit celou obrazovku',
         kbLabel: 'Klávesnice', kbSpace: 'Mezera', kbDelete: 'Smazat', kbClear: 'Vymazat vše', kbSearch: 'Hledat',
         kbPlaceholder: 'Napiš název filmu nebo seriálu',
-        kbHint: 'Čísla na ovladači píšou jako na mobilu: opakovaným stiskem 2 napíšeš a, b, c…'
+        kbHint: 'Čísla na ovladači píšou jako na mobilu: opakovaným stiskem 2 napíšeš a, b, c…',
+        removeFromHistory: 'Odebrat z historie', removedFromHistory: 'Odebráno z historie: {title}',
+        notAvailable: 'Tento titul na Moviora není dostupný.'
     },
     en: {
         homeLink: 'Moviora – home', uiLangGroup: 'Site language',
@@ -194,7 +196,9 @@ const I18N = {
         exitFullscreen: 'Exit full screen',
         kbLabel: 'Keyboard', kbSpace: 'Space', kbDelete: 'Delete', kbClear: 'Clear', kbSearch: 'Search',
         kbPlaceholder: 'Type a movie or show title',
-        kbHint: 'Number keys on the remote type like an old phone: press 2 repeatedly for a, b, c…'
+        kbHint: 'Number keys on the remote type like an old phone: press 2 repeatedly for a, b, c…',
+        removeFromHistory: 'Remove from history', removedFromHistory: 'Removed from history: {title}',
+        notAvailable: 'This title isn’t available on Moviora.'
     }
 };
 
@@ -297,6 +301,41 @@ function parseRuntime(value) {
     return num ? +num[0] : null;
 }
 
+// V angličtině ukázat anglický (nebo původní) název, když ho známe. Hledání zdrojů dál používá český.
+function displayTitle(m) {
+    if (!m) return '';
+    if (uiLang === 'en') return m.titleEn || (m.source === 'imdb' ? m.title : m.originalTitle) || m.title || '';
+    return m.title || '';
+}
+
+// Text pro porovnávání: malá písmena, bez diakritiky, oddělovače jako mezery
+const normText = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[._\-+()\[\]{}|,:;!?'"\/]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+// Jazyk souboru podle názvu
+function languageInfo(fileTitle) {
+    const n = ` ${normText(fileTitle)} `;
+    const enDub = /\b(eng?|english|anglicky)\s*(dab|dabing)\b|\b(engdab|endab|engdabing)\b/.test(n);
+    const en = enDub || /\b(eng?|english|anglicky|anglictina|angl|orig|original|originalni zneni)\b/.test(n);
+    const czSub = /\b(cz|cze|czech|cs)\s*(tit|titl|titulky|sub|subs|subtitles)\b|\b(cztit|czsub|titulky)\b/.test(n);
+    // „dabing“ bez jazyka = český, ale ne když jde o anglický nebo slovenský dabing
+    const withoutEnDub = n.replace(/\b(eng?|english|anglicky|sk|slovensky)\s*(dab|dabing)\b/g, ' ');
+    const czDub = /\b(cz|cze|czech)\s*(dab|dabing)\b|\b(czdab|czdabing|cesky|cestina)\b|\bdabing\b/.test(withoutEnDub)
+        || (/\b(cz|cze)\b/.test(withoutEnDub) && !czSub);
+    const skDub = /\b(sk)\s*(dab|dabing)\b|\b(skdab|slovensky)\b/.test(n);
+    return { en, enDub, czDub, czSub, skDub };
+}
+
+// Číslo dílu v názvu souboru (S01E02, 1x02)
+function episodeCodeOf(fileTitle) {
+    const n = normText(fileTitle);
+    let m = n.match(/\bs\s?(\d{1,2})\s?e\s?(\d{1,3})\b/);
+    if (m) return { s: +m[1], e: +m[2] };
+    m = n.match(/\b(\d{1,2})x(\d{1,3})\b/);
+    if (m) return { s: +m[1], e: +m[2] };
+    return null;
+}
+
 function detectQuality(title) {
     if (/2160p|\b4k\b|uhd/i.test(title)) return { label: '4K', cls: 'uhd' };
     if (/1080p|full\s?hd|fhd/i.test(title)) return { label: '1080p', cls: '' };
@@ -306,10 +345,11 @@ function detectQuality(title) {
 }
 
 function detectLanguage(title) {
-    if (/\b(sk|skdab|slovensky)\b/i.test(title) && !/\b(cz|czdab|cze|cesky|česky)\b/i.test(title)) return 'SK';
-    if (/\b(cz|czdab|czdabing|dabing|cesky|česky|cze)\b/i.test(title)) return 'CZ';
-    if (/\b(en|eng|english)\b/i.test(title)) return 'EN';
-    if (/\b(tit|titulky|sub|subs)\b/i.test(title)) return 'TIT';
+    const l = languageInfo(title);
+    if (l.czDub) return 'CZ';
+    if (l.skDub) return 'SK';
+    if (l.en) return 'EN';
+    if (l.czSub || /\b(tit|sub|subs)\b/i.test(title)) return 'TIT';
     return '';
 }
 
@@ -350,14 +390,28 @@ function calculateStreamScore(stream, movie, lang) {
     }
 
     // Jazyk
-    const hasCz = /\b(cz|czdab|czdabing|dabing|cesky|česky)\b/i.test(rawTitle);
-    const hasEn = /\b(en|eng|english)\b/i.test(rawTitle);
+    const l = languageInfo(stream.title);
     if (lang === 'cz') {
-        if (hasCz) score += 150;
-        if (hasEn && !hasCz) score -= 250;
+        if (l.czDub) score += 150;
+        else if (l.skDub) score += 60;
+        else if (l.en) score -= 250;
+        else if (l.czSub) score -= 60;          // původní zvuk s titulky
     } else {
-        if (hasEn) score += 150;
-        if (hasCz && !hasEn) score -= 250;
+        if (l.enDub) score += 170;
+        else if (l.en) score += 150;
+        else if (l.czSub) score += 80;          // původní zvuk + české titulky
+        if (l.czDub && !l.en) score -= 250;
+        // původní / anglický název v souboru
+        const orig = normText(movie.titleEn || movie.originalTitle);
+        if (orig && orig !== normText(movie.title) && orig.length >= 3 && normText(stream.title).includes(orig)) score += 60;
+    }
+
+    // Seriály: správný díl a jeho název
+    if (movie.isSeries) {
+        const code = episodeCodeOf(stream.title);
+        if (code) score += (code.s === currentSeason && code.e === currentEpisode) ? 80 : -300;
+        const epName = normText(currentEpisodeTitle());
+        if (epName.length >= 4 && normText(stream.title).includes(epName)) score += 120;
     }
 
     // Ukázky a soundtracky
@@ -464,7 +518,7 @@ async function search(rawQuery, push = true) {
 // =====================================================
 // Plakáty
 // =====================================================
-function renderGrid(movies, target, { lazyPosters = false, append = false } = {}) {
+function renderGrid(movies, target, { lazyPosters = false, append = false, removable = false } = {}) {
     if (!append) target.innerHTML = '';
 
     movies.forEach(movie => {
@@ -506,7 +560,7 @@ function renderGrid(movies, target, { lazyPosters = false, append = false } = {}
 
         const titleEl = document.createElement('span');
         titleEl.className = 'poster-title';
-        titleEl.textContent = title;
+        titleEl.textContent = displayTitle(normalized) || title;
 
         const y = document.createElement('span');
         y.className = 'poster-year';
@@ -514,15 +568,36 @@ function renderGrid(movies, target, { lazyPosters = false, append = false } = {}
         y.textContent = lastEp ? `${year ? year + ', ' : ''}${episodeTag(lastEp.season, lastEp.episode)}` : year;
 
         card.append(frame, titleEl, y);
-        target.appendChild(card);
+
+        let item = card;
+        if (removable) {
+            // obal kvůli křížku (tlačítko nesmí být uvnitř tlačítka)
+            item = document.createElement('div');
+            item.className = 'poster-item';
+            const x = document.createElement('button');
+            x.type = 'button';
+            x.className = 'poster-remove';
+            x.setAttribute('aria-label', `${t('removeFromHistory')}: ${title}`);
+            x.title = t('removeFromHistory');
+            x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+            x.addEventListener('click', (e) => { e.stopPropagation(); removeFromHistory(title, item); });
+            item.append(card, x);
+        }
+        target.appendChild(item);
 
         if (lazyPosters && csfdUrl) {
             apiGet(`/csfd-scrape?url=${encodeURIComponent(csfdUrl)}`)
                 .then(d => {
+                    if (d.explicit) { item.remove(); return; }   // pornografie se nezobrazuje
                     if (d.poster && d.poster.trim()) {
                         normalized.poster = d.poster;
                         img.src = d.poster;
                     }
+                    if (d.titleEn) {
+                        normalized.titleEn = d.titleEn;
+                        titleEl.textContent = displayTitle(normalized) || title;
+                    }
+                    if (d.isSeries) normalized.isSeries = true;
                 })
                 .catch(() => {});
         }
@@ -539,7 +614,7 @@ async function openMovieDetail(movie, push = true) {
     showAllSources = false;
 
     if (push) history.pushState({ view: 'detail', movie }, '', '#film');
-    document.title = `${movie.title} – Moviora`;
+    document.title = `${displayTitle(movie)} – Moviora`;
     setView('detail');
 
     $('detailBackdrop').style.backgroundImage = 'none';
@@ -555,14 +630,18 @@ async function openMovieDetail(movie, push = true) {
         isSeries: Boolean(movie.isSeries),
         runtime: movie.runtime || null,
         imdbLink: movie.imdbLink || movie.imdb_url || movie.imdbUrl || null,
+        titleEn: movie.titleEn || null,
         seasons: null
     };
+    let explicit = false;
 
     if (csfdUrl) {
         try {
             const d = await apiGet(`/csfd-scrape?details=1&url=${encodeURIComponent(csfdUrl)}`);
             if (!d.error) {
                 if (d.imdbUrl) details.imdbLink = d.imdbUrl;
+                if (d.titleEn) details.titleEn = d.titleEn;
+                explicit = Boolean(d.explicit);
                 details.seasons = Array.isArray(d.seasons) && d.seasons.length ? d.seasons : null;
                 if (d.poster && d.poster.trim()) details.poster = d.poster;
                 details.description = d.description || details.description;
@@ -576,6 +655,11 @@ async function openMovieDetail(movie, push = true) {
     }
 
     if (reqId !== detailRequestId) return; // mezitím otevřen jiný film
+
+    if (explicit) {
+        detailContent.innerHTML = `<p class="status error">${t('notAvailable')}</p>`;
+        return;
+    }
 
     Object.assign(currentMovieData, details);
 
@@ -620,7 +704,10 @@ function renderDetail() {
     if (m.genres) facts.push(`<li>${escapeHtml(m.genres)}</li>`);
     if (m.rating) facts.push(`<li class="rating">${t('rating', { n: escapeHtml(m.rating) })}</li>`);
 
-    const showOriginal = m.originalTitle && m.originalTitle.toLowerCase() !== String(m.title).toLowerCase();
+    // Pod hlavním názvem ten druhý: v češtině anglický/původní, v angličtině český
+    const mainTitle = displayTitle(m);
+    const altTitle = uiLang === 'en' ? m.title : (m.titleEn || m.originalTitle);
+    const showOriginal = altTitle && normText(altTitle) !== normText(mainTitle);
     const fav = isMovieInFavorites(m.title);
 
     const episodePicker = m.isSeries ? `
@@ -645,8 +732,8 @@ function renderDetail() {
             <img class="detail-poster" src="${escapeHtml(poster)}" alt="" referrerpolicy="no-referrer"
                  onerror="this.onerror=null;this.src='${FALLBACK_POSTER}'">
             <div class="detail-main">
-                <h1 class="detail-title">${escapeHtml(m.title)}</h1>
-                ${showOriginal ? `<p class="detail-original">${escapeHtml(m.originalTitle)}</p>` : ''}
+                <h1 class="detail-title">${escapeHtml(mainTitle)}</h1>
+                ${showOriginal ? `<p class="detail-original">${escapeHtml(altTitle)}</p>` : ''}
                 ${facts.length ? `<ul class="facts">${facts.join('')}</ul>` : ''}
 
                 <div class="actions">
@@ -866,27 +953,47 @@ async function fetchAndRenderStreams() {
     $('sourcesBody').innerHTML = `<p class="status">${t('searchingSources')}</p>`;
 
     const m = currentMovieData;
-    const suffix = selectedLanguage === 'en' ? ' ENG' : '';
-    const queries = [];
+    const en = selectedLanguage === 'en';
+    const orig = [m.titleEn, m.originalTitle].find(x => x && normText(x) !== normText(m.title)) || null;
+    const first = firstWordOf(m.title);
+    const stages = [];   // každá etapa = dotazy spuštěné naráz; další etapa jen když předchozí nic nenašla
 
     if (m.isSeries) {
         writeJSON(`last_ep_${m.title}`, { season: currentSeason, episode: currentEpisode });
-        queries.push(`${m.title} ${episodeTag()}${suffix}`);
-        queries.push(`${m.title} ${currentSeason}x${pad2(currentEpisode)}${suffix}`);
-    } else {
-        const year = String(m.year || '').match(/\d{4}/);
-        if (year) queries.push(`${m.title} ${year[0]}${suffix}`);
-        queries.push(`${m.title}${suffix}`);
-        if (m.originalTitle && m.originalTitle.toLowerCase() !== m.title.toLowerCase()) {
-            queries.push(`${m.originalTitle}${year ? ' ' + year[0] : ''}${suffix}`);
+        const ep = episodeTag(), alt = `${currentSeason}x${pad2(currentEpisode)}`;
+        if (en) {
+            stages.push([`${m.title} ${ep} ENG`, orig ? `${orig} ${ep}` : null]);
+            stages.push([`${m.title} ${ep}`]);
+        } else {
+            stages.push([`${m.title} ${ep}`]);
         }
+        stages.push([`${m.title} ${alt}`, orig ? `${orig} ${ep}` : null]);
+        if (first) stages.push([`${first} ${ep}`]);
+    } else {
+        const y = (String(m.year || '').match(/\d{4}/) || [''])[0];
+        const ys = y ? ' ' + y : '';
+        if (en) {
+            stages.push([`${m.title}${ys} ENG`, orig ? `${orig}${ys}` : null]);
+            stages.push([`${m.title} ENG`, orig ? `${orig}` : null, `${m.title}${ys}`]);
+        } else {
+            if (y) stages.push([`${m.title}${ys}`]);
+            stages.push([`${m.title}`]);
+            if (orig) stages.push([`${orig}${ys}`]);
+        }
+        if (first) stages.push([`${first}${ys}`]);
     }
 
     try {
         let raw = [];
-        for (const q of queries) {
-            raw = await fetchStreams(q, signal);
+        const tried = new Set();
+        for (const stage of stages) {
+            const qs = stage.filter(q => q && !tried.has(normText(q)));
+            qs.forEach(q => tried.add(normText(q)));
+            if (!qs.length) continue;
+            const lists = await Promise.all(qs.map(q => fetchStreams(q, signal)));
             if (!isCurrent()) return;
+            const seen = new Set();
+            raw = lists.flat().filter(st => !seen.has(st.link) && seen.add(st.link));
             if (raw.length) break;
         }
 
@@ -900,6 +1007,15 @@ async function fetchAndRenderStreams() {
         setPlayButton('none');
         $('sourcesBody').innerHTML = `<p class="status error">${t('sourcesFailed', { e: escapeHtml(e.message) })}</p>`;
     }
+}
+
+// První „opravdové“ slovo z víceslovného názvu (pro poslední pokus o hledání)
+function firstWordOf(title) {
+    const words = String(title || '').split(/[\s:,\-–]+/).filter(Boolean);
+    if (words.length < 2) return null;
+    const skip = ['the', 'a', 'an', 'der', 'die', 'das', 'le', 'la', 'les', 'el', 'los', 'il'];
+    const word = words.find(w => w.length >= 3 && !skip.includes(w.toLowerCase())) || words[0];
+    return normText(word) === normText(title) ? null : word;
 }
 
 function setPlayButton(state) {
@@ -1086,7 +1202,7 @@ async function startStreaming(streamOverride) {
 function openPlayer() {
     const m = currentMovieData;
     lastFocus = document.activeElement;
-    P.title.textContent = m.title;
+    P.title.textContent = displayTitle(m);
     P.subtitle.textContent = m.isSeries
         ? t('seasonEp', { s: currentSeason, e: currentEpisode }) + (currentEpisodeTitle() ? ` – ${currentEpisodeTitle()}` : '')
         : (m.year && m.year !== '---' ? String(m.year) : '');
@@ -1426,7 +1542,7 @@ function loadLibrary() {
     $('historySection').hidden = history.length === 0;
     $('favoritesSection').hidden = favorites.length === 0;
 
-    if (history.length) renderGrid(history, $('historyGrid'));
+    if (history.length) renderGrid(history, $('historyGrid'), { removable: true });
     if (favorites.length) renderGrid(favorites, $('favoritesGrid'));
     loadDiscover();
     tvFocusFirst('#historyGrid .poster, #discoverRows .poster, #favoritesGrid .poster, #searchQuery', true);
@@ -1599,7 +1715,7 @@ async function loadDiscover() {
         try {
             const sim = await apiGet(`/csfd-similar?id=${id}`);
             if (renderId !== discoverRenderId || !sim.items || !sim.items.length) return;
-            becauseSlot.replaceWith(rowSection({ id: 'because', title: t('becauseWatched', { title: seed.title }), items: sim.items }));
+            becauseSlot.replaceWith(rowSection({ id: 'because', title: t('becauseWatched', { title: displayTitle(seed) }), items: sim.items }));
         } catch { /* bez doporučení */ }
     }
 }
@@ -1656,10 +1772,33 @@ async function openGenre(id, name, type = 'movie', push = true) {
     }
 }
 
+// Odebrání z historie sledování (včetně uložené pozice)
+function removeFromHistory(title, itemEl) {
+    const history = readJSON('watch_history', []).filter(h => h.title !== title);
+    writeJSON('watch_history', history);
+    try {
+        Object.keys(localStorage)
+            .filter(k => k === `progress_${title}` || k.startsWith(`progress_${title}_S`) || k === `last_ep_${title}`)
+            .forEach(k => localStorage.removeItem(k));
+    } catch { /* úložiště nedostupné */ }
+
+    // Na TV přesunout výběr na sousední kartu
+    const row = itemEl && itemEl.parentElement;
+    const neighbour = itemEl && (itemEl.nextElementSibling || itemEl.previousElementSibling);
+    const hadFocus = itemEl && itemEl.contains(document.activeElement);
+    if (itemEl) itemEl.remove();
+    if (row && !row.children.length) $('historySection').hidden = true;
+    if (hadFocus) {
+        const next = neighbour && neighbour.querySelector('.poster');
+        if (next) tvFocus(next); else tvFocusFirst('#discoverRows .poster, #searchQuery');
+    }
+    toast(t('removedFromHistory', { title }), 2500);
+}
+
 // Do knihovny ukládáme jen to, co je potřeba pro kartu a detail
 function libraryEntry(m) {
-    const { title, originalTitle, year, poster, csfd_url, csfdLink, imdbLink, isSeries, genres, rating, runtime, description, actors, id, source } = m;
-    return { title, originalTitle, year, poster, csfd_url, csfdLink, imdbLink, isSeries, genres, rating, runtime, description, actors, id, source };
+    const { title, titleEn, originalTitle, year, poster, csfd_url, csfdLink, imdbLink, isSeries, genres, rating, runtime, description, actors, id, source } = m;
+    return { title, titleEn, originalTitle, year, poster, csfd_url, csfdLink, imdbLink, isSeries, genres, rating, runtime, description, actors, id, source };
 }
 
 function addToHistory(movie) {
