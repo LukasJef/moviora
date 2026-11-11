@@ -172,7 +172,7 @@
         }
         .poster-row {
             display: grid; grid-auto-flow: column;
-            grid-auto-columns: minmax(156px, 180px);
+            grid-auto-columns: 168px;
             gap: 20px; overflow-x: auto;
             padding-bottom: 12px; scroll-snap-type: x proximity;
             scrollbar-width: thin;
@@ -200,6 +200,53 @@
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
         .poster-year { color: var(--muted); font-size: 14px; }
+
+        /* ---------- Řady na hlavní stránce ---------- */
+        .shelf-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+        .shelf-head .shelf-title { margin: 0; }
+        .see-all {
+            flex: none; border: 0; background: none; padding: 4px 0; color: var(--muted);
+            font-weight: 700; font-size: 15px; border-bottom: 2px solid transparent;
+        }
+        .see-all:hover { color: var(--text); border-bottom-color: var(--red); }
+        .row-wrap { position: relative; }
+        .row-nav {
+            position: absolute; top: 0; bottom: 64px; z-index: 2; width: 52px;
+            display: none; place-items: center; border: 0; color: var(--text);
+            opacity: 0; transition: opacity .15s;
+        }
+        .row-nav svg { width: 30px; height: 30px; }
+        .row-nav.prev { left: calc(-1 * var(--gutter)); width: calc(var(--gutter) + 8px); background: linear-gradient(to right, var(--bg) 35%, transparent); }
+        .row-nav.next { right: calc(-1 * var(--gutter)); width: calc(var(--gutter) + 8px); background: linear-gradient(to left, var(--bg) 35%, transparent); }
+        @media (hover: hover) and (pointer: fine) {
+            .row-nav { display: grid; }
+            .row-wrap:hover .row-nav { opacity: 1; }
+        }
+        html.tv .row-nav { display: none; }
+        .poster-row { scrollbar-width: none; }
+        .poster-row::-webkit-scrollbar { display: none; }
+
+        .poster.skeleton .poster-frame { animation: shimmer 1.4s ease-in-out infinite; }
+        @keyframes shimmer { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
+        .poster-rating {
+            position: absolute; top: 8px; left: 8px; padding: 2px 7px; border-radius: 4px;
+            background: rgba(23, 11, 12, .85); color: var(--text); font-size: 13px; font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+        .poster-rating.high { background: var(--red); color: #fff; }
+        .poster-rating.low { color: var(--muted); }
+
+        .genre-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+        .genre-chip {
+            min-height: 44px; padding: 0 18px; border-radius: 999px;
+            border: 1px solid var(--line); background: var(--surface); font-weight: 700;
+            transition: border-color .15s, background-color .15s;
+        }
+        .genre-chip:hover { border-color: var(--red); background: var(--surface-2); }
+        html.tv .genre-chip { min-height: 56px; font-size: 18px; padding: 0 24px; }
+
+        .results-tools:not(:empty) { margin: -4px 0 24px; }
 
         /* Ukazatel rozkoukanosti = playhead z loga */
         .playhead {
@@ -609,6 +656,63 @@
         html.tv .player-heading strong { font-size: 2rem; }
         html.tv .volume input { display: none; }
 
+        /* ---------- Klávesnice na obrazovce (TV) ---------- */
+        .tv-kb {
+            position: fixed; left: 50%; bottom: 0; z-index: 150; transform: translateX(-50%);
+            width: min(1180px, 94vw); padding: 24px 28px 20px;
+            background: rgba(35, 18, 20, .98); border: 1px solid var(--line); border-bottom: 0;
+            border-radius: 14px 14px 0 0; box-shadow: 0 -30px 80px rgba(0,0,0,.6);
+        }
+        .tv-kb::before {
+            content: ''; position: absolute; left: 28px; top: 24px; width: 6px; height: 56px; background: var(--red);
+        }
+        body.kb-open .tv-hint { display: none !important; }
+        .kb-text {
+            min-height: 56px; padding-left: 22px; margin-bottom: 18px;
+            font-size: 2.6rem; font-weight: 900; font-stretch: 75%; line-height: 56px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .kb-placeholder { color: var(--muted); font-weight: 600; font-size: 1.6rem; font-stretch: 100%; }
+        .kb-pending { color: var(--red); text-decoration: underline 4px var(--red); text-underline-offset: 8px; }
+        .kb-caret {
+            display: inline-block; width: 4px; height: 44px; margin-left: 4px; vertical-align: -6px;
+            background: var(--text); animation: caret 1s steps(1) infinite;
+        }
+        @keyframes caret { 50% { opacity: 0; } }
+        .kb-body { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; gap: 12px 16px; }
+        .kb-layouts { grid-row: 1 / 3; display: flex; flex-direction: column; gap: 10px; }
+        .kb-layouts button {
+            width: 88px; min-height: 56px; border-radius: var(--radius-m); border: 1px solid var(--line);
+            background: var(--bg); color: var(--muted); font-weight: 800; font-size: 18px;
+        }
+        .kb-layouts button[aria-pressed="true"] { color: var(--text); border-color: var(--muted); }
+        .kb-keys { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; }
+        .kb-key {
+            min-height: 58px; border-radius: var(--radius-m); border: 0; background: var(--surface-2);
+            font-size: 24px; font-weight: 700;
+        }
+        .kb-actions { display: grid; grid-template-columns: 2fr 1.4fr 1.4fr 1.6fr; gap: 8px; }
+        .kb-wide {
+            min-height: 58px; border-radius: var(--radius-m); border: 0; background: var(--surface-2);
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: 18px; font-weight: 700;
+        }
+        .kb-wide svg { width: 24px; height: 24px; }
+        .kb-submit { background: var(--red); color: #fff; }
+        html.tv .tv-kb .tv-focus { outline-offset: 2px; box-shadow: 0 0 0 7px rgba(229, 9, 20, .45); }
+        html.tv .tv-kb .kb-key.tv-focus, html.tv .tv-kb .kb-wide.tv-focus { background: var(--text); color: var(--bg); }
+        html.tv .tv-kb .kb-submit.tv-focus { background: #fff; color: var(--red); }
+        .kb-t9 {
+            display: flex; align-items: center; gap: 10px; min-height: 40px; margin-top: 16px;
+            color: var(--muted); font-size: 17px;
+        }
+        .kb-t9 kbd {
+            font: 800 18px var(--font); color: var(--text); border: 1px solid var(--muted);
+            border-radius: 6px; padding: 2px 10px; margin-right: 6px;
+        }
+        .t9-char { min-width: 34px; text-align: center; padding: 3px 0; border-radius: 6px; font-size: 22px; font-weight: 700; color: var(--muted); }
+        .t9-char.on { background: var(--red); color: #fff; }
+        @supports not (inset: 0) { .tv-kb { left: 3vw; transform: none; } }
+
         /* Nápověda k ovládání dálkovým ovladačem */
         .tv-hint {
             position: fixed; right: var(--gutter); bottom: 24px; z-index: 30;
@@ -683,15 +787,17 @@
                 <h2 class="shelf-title" data-i18n="continueWatching">Pokračovat ve sledování</h2>
                 <div id="historyGrid" class="poster-row"></div>
             </section>
+            <div id="discoverRows"></div>
             <section class="shelf" id="favoritesSection" hidden>
                 <h2 class="shelf-title" data-i18n="favorites">Oblíbené</h2>
-                <div id="favoritesGrid" class="poster-grid"></div>
+                <div id="favoritesGrid" class="poster-row"></div>
             </section>
         </section>
 
         <!-- Výsledky vyhledávání -->
         <section id="resultsContainer" class="shelf" hidden>
             <h2 class="shelf-title" id="resultsTitle">Výsledky</h2>
+            <div id="resultsTools" class="results-tools"></div>
             <div id="results" class="poster-grid"></div>
         </section>
 
@@ -789,6 +895,32 @@
             <button type="button" class="btn btn-quiet" id="noticeCs" lang="cs">Přepnout do češtiny</button>
         </div>
     </dialog>
+
+    <!-- Klávesnice na obrazovce (jen TV režim) -->
+    <div id="tvKeyboard" class="tv-kb" hidden role="dialog" aria-label="Klávesnice" data-i18n-aria="kbLabel">
+        <div class="kb-text" id="kbText" aria-live="polite"></div>
+        <div class="kb-body">
+            <div class="kb-layouts">
+                <button type="button" data-layout="abc" aria-pressed="true">abc</button>
+                <button type="button" data-layout="accents" aria-pressed="false">ěšč</button>
+                <button type="button" data-layout="num" aria-pressed="false">123</button>
+            </div>
+            <div class="kb-keys" id="kbKeys"></div>
+            <div class="kb-actions">
+                <button type="button" class="kb-wide" id="kbSpace" data-i18n="kbSpace">Mezera</button>
+                <button type="button" class="kb-wide" id="kbDelete">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H8l-6 7 6 7h13z"/><path d="M12 9l6 6M18 9l-6 6"/></svg>
+                    <span data-i18n="kbDelete">Smazat</span>
+                </button>
+                <button type="button" class="kb-wide" id="kbClear" data-i18n="kbClear">Vymazat vše</button>
+                <button type="button" class="kb-wide kb-submit" id="kbSubmit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <span data-i18n="kbSearch">Hledat</span>
+                </button>
+            </div>
+        </div>
+        <div class="kb-t9" id="kbT9"></div>
+    </div>
 
     <div class="tv-hint" aria-hidden="true">
         <span><kbd>← ↑ → ↓</kbd><span data-i18n="tvHintMove">pohyb</span></span>

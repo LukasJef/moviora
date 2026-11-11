@@ -3,6 +3,9 @@
 // Proměnné prostředí: PORT, PREHRAJTO_EMAIL, PREHRAJTO_PASSWORD
 // =====================================================
 import express from 'express';
+import { readFile, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import cors from 'cors';
 import { csfd } from 'node-csfd-api';
 import axios from 'axios';
@@ -526,6 +529,243 @@ app.get('/csfd-episodes', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// ==========================================
+// NABÍDKA NA HLAVNÍ STRÁNCE (z ČSFD)
+// Nejnavštěvovanější filmy a seriály, žebříčky a žánry.
+// Stahuje se jednou za 24 h, ukládá se na disk a mezitím se servíruje uložená verze.
+// ==========================================
+const CSFD_BASE = 'https://www.csfd.cz';
+const CSFD_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Accept-Language': 'cs-CZ,cs;q=0.9',
+    Accept: 'text/html,application/xhtml+xml'
+};
+const DISCOVER_TTL = 24 * 60 * 60 * 1000;
+const DISCOVER_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'discover-cache.json');
+
+// Žánry, které dávají smysl jako řada na hlavní stránce (id podle ČSFD)
+const GENRE_WHITELIST = ['Akční', 'Animovaný', 'Dobrodružný', 'Dokumentární', 'Drama', 'Fantasy', 'Historický', 'Horor',
+    'Katastrofický', 'Komedie', 'Krimi', 'Muzikál', 'Mysteriózní', 'Pohádka', 'Psychologický', 'Rodinný', 'Romantický',
+    'Sci-Fi', 'Sportovní', 'Thriller', 'Válečný', 'Western', 'Životopisný'];
+
+async function csfdHtml(url) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    try {
+        const r = await fetch(url, { headers: CSFD_HEADERS, signal: ctrl.signal });
+        if (!r.ok) throw new Error(`ČSFD ${r.status}`);
+        return await r.text();
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+const decodeEntities = (s) => String(s || '')
+    .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n));
+
+// Plakát v lepším rozlišení (ČSFD nabízí i větší varianty stejného obrázku)
+function bigPoster(src) {
+    if (!src) return '';
+    let url = src.startsWith('//') ? 'https:' + src : src;
+    return url.replace(/\/cache\/resized\/[^/]+\//, '/cache/resized/w360h510/');
+}
+
+// Z kusu HTML vytáhne karty filmů (funguje pro hlavní stránku i žebříčky)
+function parseFilmArticles(html, { isSeries = false, excludeShorts = true, excludeDocs = false } = {}) {
+    const out = [];
+    const seen = new Set();
+    for (const chunk of html.split(/<article\b/).slice(1)) {
+        const link = chunk.match(/href="(\/film\/(\d+)-[^"/]+\/(?:[^"]*?)?)"/);
+        if (!link) continue;
+        const id = parseInt(link[2], 10);
+        if (seen.has(id)) continue;
+
+        const titleM = chunk.match(/class="film-title-name"[^>]*>\s*([^<]+?)\s*</);
+        if (!titleM) continue;
+        const yearM = chunk.match(/film-title-info[\s\S]*?(\d{4})/);
+        const imgM = chunk.match(/<img[^>]+src="([^"]+)"/);
+        const originM = chunk.match(/class="info-country">([^<]+)</);
+        const genresM = chunk.match(/film-origins-genres[\s\S]*?<span class="bullet"><\/span>([^<]+)</);
+        const ratingM = chunk.match(/rating-average[^>]*>\s*([\d,]+)\s*%/);
+        const genres = genresM ? decodeEntities(genresM[1]).split(',').map(g => g.trim()).filter(Boolean) : [];
+
+        if (excludeShorts && genres.includes('Krátkometrážní')) continue;
+        if (excludeDocs && genres.includes('Dokumentární')) continue;
+        if (imgM && /\/assets\/images\/|poster-free|no-poster/.test(imgM[1])) imgM[1] = '';
+
+        seen.add(id);
+        out.push({
+            id,
+            title: decodeEntities(titleM[1]),
+            year: yearM ? parseInt(yearM[1], 10) : null,
+            poster: imgM ? bigPoster(imgM[1]) : '',
+            origin: originM ? decodeEntities(originM[1]).trim() : '',
+            genres,
+            rating: ratingM ? Math.round(parseFloat(ratingM[1].replace(',', '.'))) : null,
+            isSeries,
+            csfdUrl: `${CSFD_BASE}/film/${id}/prehled/`
+        });
+    }
+    return out;
+}
+
+function sectionAfterHeading(html, heading) {
+    const i = html.indexOf(`<h2>${heading}</h2>`);
+    if (i === -1) return '';
+    const end = html.indexOf('</section>', i);
+    return html.slice(i, end === -1 ? i + 60000 : end);
+}
+
+// Adresa filtrovaného žebříčku (ČSFD kóduje filtr jako JSON → base64 → ROT13)
+const rot13 = (s) => s.replace(/[a-zA-Z]/g, c => String.fromCharCode((c <= 'Z' ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26));
+function genreChartUrl(genreId, isSeries) {
+    const filter = { type: isSeries ? 3 : 1, country_id: null, genre: [genreId], year_from: null, year_to: null, actor: [], director: [] };
+    return `${CSFD_BASE}/zebricky/vlastni-vyber/?filter=${encodeURIComponent(rot13(Buffer.from(JSON.stringify(filter)).toString('base64').replace(/=+$/, '')))}`;
+}
+
+async function buildDiscover() {
+    const [home, topMovies, topSeries, chartPage] = await Promise.all([
+        csfdHtml(`${CSFD_BASE}/`),
+        csfdHtml(`${CSFD_BASE}/zebricky/filmy/nejlepsi/`),
+        csfdHtml(`${CSFD_BASE}/zebricky/serialy/nejlepsi/`),
+        csfdHtml(`${CSFD_BASE}/zebricky/vlastni-vyber/`)
+    ]);
+
+    const genres = [];
+    for (const m of chartPage.matchAll(/name="genre\[\]"[^>]*value="(\d+)"[\s\S]*?class="label-name">([^<]+)</g)) {
+        const name = decodeEntities(m[2]).trim();
+        if (GENRE_WHITELIST.includes(name)) genres.push({ id: parseInt(m[1], 10), name });
+    }
+
+    const sections = [
+        { id: 'popular-movies', items: parseFilmArticles(sectionAfterHeading(home, 'Nejnavštěvovanější filmy')) },
+        { id: 'popular-series', items: parseFilmArticles(sectionAfterHeading(home, 'Nejnavštěvovanější seriály'), { isSeries: true }) },
+        { id: 'top-movies', items: parseFilmArticles(topMovies) },
+        { id: 'top-series', items: parseFilmArticles(topSeries, { isSeries: true }) }
+    ];
+    if (sections.every(s => !s.items.length)) throw new Error('ČSFD nevrátilo žádné tituly (změnila se stránka?)');
+    return { updated: new Date().toISOString(), sections, genres };
+}
+
+let discoverData = null;
+let discoverRefreshing = null;
+const genreCache = new Map();
+
+async function loadDiscoverFromDisk() {
+    try {
+        const saved = JSON.parse(await readFile(DISCOVER_FILE, 'utf8'));
+        if (saved && saved.discover) discoverData = saved.discover;
+        for (const [k, v] of Object.entries(saved.genres || {})) genreCache.set(k, v);
+        console.log('📁 Nabídka načtena z disku', discoverData?.updated || '');
+    } catch { /* první spuštění */ }
+}
+
+async function saveDiscoverToDisk() {
+    try {
+        await writeFile(DISCOVER_FILE, JSON.stringify({ discover: discoverData, genres: Object.fromEntries(genreCache) }));
+    } catch (e) { console.warn('Nabídku se nepodařilo uložit:', e.message); }
+}
+
+function refreshDiscover() {
+    if (discoverRefreshing) return discoverRefreshing;
+    discoverRefreshing = buildDiscover()
+        .then(async data => {
+            discoverData = data;
+            await saveDiscoverToDisk();
+            console.log('🔄 Nabídka z ČSFD obnovena:', data.sections.map(s => `${s.id}=${s.items.length}`).join(', '));
+            return data;
+        })
+        .catch(e => { console.warn('Obnova nabídky selhala:', e.message); if (!discoverData) throw e; return discoverData; })
+        .finally(() => { discoverRefreshing = null; });
+    return discoverRefreshing;
+}
+
+const isStale = (iso) => !iso || Date.now() - new Date(iso).getTime() > DISCOVER_TTL;
+
+app.get('/discover', async (req, res) => {
+    try {
+        if (!discoverData) await refreshDiscover();
+        else if (isStale(discoverData.updated)) refreshDiscover(); // na pozadí, hned vrátit uložené
+        res.set('Cache-Control', 'public, max-age=1800');
+        res.json(discoverData);
+    } catch (err) {
+        res.status(502).json({ error: 'Nabídku z ČSFD se nepodařilo načíst: ' + err.message });
+    }
+});
+
+app.get('/discover/genre', async (req, res) => {
+    const id = parseInt(req.query.id, 10);
+    const isSeries = req.query.type === 'series';
+    if (!id) return res.status(400).json({ error: "Chybí parametr 'id'" });
+    const key = `${id}-${isSeries ? 's' : 'm'}`;
+    try {
+        let entry = genreCache.get(key);
+        if (!entry || isStale(entry.updated)) {
+            const html = await csfdHtml(genreChartUrl(id, isSeries));
+            const isDocGenre = (discoverData?.genres || []).some(g => g.id === id && g.name === 'Dokumentární');
+            const items = parseFilmArticles(html, { isSeries, excludeDocs: !isDocGenre });
+            if (items.length || !entry) entry = { updated: new Date().toISOString(), items };
+            genreCache.set(key, entry);
+            saveDiscoverToDisk();
+        }
+        res.set('Cache-Control', 'public, max-age=1800');
+        res.json(entry);
+    } catch (err) {
+        const old = genreCache.get(key);
+        if (old) return res.json(old);
+        res.status(502).json({ error: 'Žánr se nepodařilo načíst: ' + err.message });
+    }
+});
+
+// Podobné tituly k filmu (pro řadu „Protože jsi sledoval…“)
+const similarCache = new Map();
+app.get('/csfd-similar', async (req, res) => {
+    const id = parseInt(req.query.id, 10);
+    if (!id) return res.status(400).json({ error: "Chybí parametr 'id'" });
+    try {
+        const hit = similarCache.get(id);
+        if (hit && Date.now() - hit.t < 7 * DISCOVER_TTL) return res.json({ items: hit.items });
+
+        const movie = await csfdMovieCached(id);
+        const list = [...(movie.similar || []), ...(movie.related || [])]
+            .filter((v, i, a) => v && v.id && a.findIndex(x => x.id === v.id) === i)
+            .slice(0, 12);
+        const items = (await Promise.all(list.map(async (s) => {
+            try {
+                const m = await csfdMovieCached(s.id);
+                const type = String(m.type || '').toLowerCase();
+                if (type === 'season' || type === 'episode') return null;
+                return {
+                    id: s.id,
+                    title: m.title || s.title,
+                    year: parseInt(m.year, 10) || null,
+                    poster: m.poster || '',
+                    genres: Array.isArray(m.genres) ? m.genres : [],
+                    rating: m.rating || null,
+                    isSeries: type === 'series',
+                    csfdUrl: `${CSFD_BASE}/film/${s.id}/prehled/`
+                };
+            } catch { return null; }
+        }))).filter(Boolean);
+        if (similarCache.size > 500) similarCache.delete(similarCache.keys().next().value);
+        similarCache.set(id, { t: Date.now(), items });
+        res.set('Cache-Control', 'public, max-age=21600');
+        res.json({ items });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Nabídka: načíst z disku, obnovit při startu, když je stará, a pak každou hodinu zkontrolovat
+loadDiscoverFromDisk().then(() => {
+    if (!discoverData || isStale(discoverData.updated)) refreshDiscover().catch(() => {});
+});
+setInterval(() => {
+    if (!discoverData || isStale(discoverData.updated)) refreshDiscover().catch(() => {});
+}, 60 * 60 * 1000).unref();
 
 // ==========================================
 // 3. ENDPOINT: /get-streams

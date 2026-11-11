@@ -124,7 +124,16 @@ const I18N = {
         tvEnabled: 'Režim pro televizi zapnutý – ovládej šipkami', tvDisabled: 'Režim pro televizi vypnutý',
         tvHintMove: 'pohyb', tvHintOk: 'vybrat', tvHintBack: 'zpět',
         seasonsCount: '{n} řad', seasonsCount1: '1 řada', seasonsCount2: '{n} řady',
-        loadingEpisodes: 'Načítám díly…', lastEpisode: 'Tohle byl poslední díl seriálu.'
+        loadingEpisodes: 'Načítám díly…', lastEpisode: 'Tohle byl poslední díl seriálu.',
+        popularMovies: 'Nejnavštěvovanější filmy', popularSeries: 'Nejnavštěvovanější seriály',
+        topMovies: 'Nejlépe hodnocené filmy', topSeries: 'Nejlépe hodnocené seriály',
+        genresTitle: 'Žánry', becauseWatched: 'Protože jsi sledoval {title}', seeAll: 'Zobrazit vše',
+        typeMovies: 'Filmy', typeSeries: 'Seriály', discoverFailed: 'Nabídku z ČSFD se teď nepodařilo načíst.',
+        listEmpty: 'Tady zatím nic není.', scrollLeft: 'Posunout doleva', scrollRight: 'Posunout doprava',
+        exitFullscreen: 'Ukončit celou obrazovku',
+        kbLabel: 'Klávesnice', kbSpace: 'Mezera', kbDelete: 'Smazat', kbClear: 'Vymazat vše', kbSearch: 'Hledat',
+        kbPlaceholder: 'Napiš název filmu nebo seriálu',
+        kbHint: 'Čísla na ovladači píšou jako na mobilu: opakovaným stiskem 2 napíšeš a, b, c…'
     },
     en: {
         homeLink: 'Moviora – home', uiLangGroup: 'Site language',
@@ -176,7 +185,16 @@ const I18N = {
         tvEnabled: 'TV mode on – use the arrow keys', tvDisabled: 'TV mode off',
         tvHintMove: 'move', tvHintOk: 'select', tvHintBack: 'back',
         seasonsCount: '{n} seasons', seasonsCount1: '1 season', seasonsCount2: '{n} seasons',
-        loadingEpisodes: 'Loading episodes…', lastEpisode: 'That was the last episode of the series.'
+        loadingEpisodes: 'Loading episodes…', lastEpisode: 'That was the last episode of the series.',
+        popularMovies: 'Most viewed movies', popularSeries: 'Most viewed TV shows',
+        topMovies: 'Top rated movies', topSeries: 'Top rated TV shows',
+        genresTitle: 'Genres', becauseWatched: 'Because you watched {title}', seeAll: 'See all',
+        typeMovies: 'Movies', typeSeries: 'TV shows', discoverFailed: 'Couldn’t load recommendations from ČSFD right now.',
+        listEmpty: 'Nothing here yet.', scrollLeft: 'Scroll left', scrollRight: 'Scroll right',
+        exitFullscreen: 'Exit full screen',
+        kbLabel: 'Keyboard', kbSpace: 'Space', kbDelete: 'Delete', kbClear: 'Clear', kbSearch: 'Search',
+        kbPlaceholder: 'Type a movie or show title',
+        kbHint: 'Number keys on the remote type like an old phone: press 2 repeatedly for a, b, c…'
     }
 };
 
@@ -233,7 +251,11 @@ const ICONS = {
     star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z"/></svg>',
     download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
     prev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>',
-    next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>'
+    next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>',
+    fsEnter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+    fsExit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',
+    backspace: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 5H8l-6 7 6 7h13z"/><path d="M12 9l6 6M18 9l-6 6"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'
 };
 
 // =====================================================
@@ -348,6 +370,7 @@ function calculateStreamScore(stream, movie, lang) {
 // Navigace (funguje i tlačítko Zpět v prohlížeči)
 // =====================================================
 function setView(view) {
+    if (view !== 'results') $('resultsTools').innerHTML = '';
     libraryContainer.hidden = view !== 'home';
     resultsContainer.hidden = view !== 'results';
     movieDetail.hidden = view !== 'detail';
@@ -379,6 +402,8 @@ window.addEventListener('popstate', (e) => {
 function renderRoute(state) {
     state = state || { view: 'home' };
     if (state.view === 'results' && state.q) return search(state.q, false);
+    if (state.view === 'list' && state.list) return openList(state.list, false);
+    if (state.view === 'genre' && state.id) return openGenre(state.id, state.name, state.type, false);
     if (state.view === 'detail' && state.movie) return openMovieDetail(state.movie, false);
     showMainPage(false);
 }
@@ -416,6 +441,7 @@ async function search(rawQuery, push = true) {
 
     setView('results');
     $('resultsTitle').textContent = t('resultsFor', { q: query });
+    $('resultsTools').innerHTML = '';
     resultsDiv.innerHTML = `<p class="status">${t('searching')}</p>`;
 
     try {
@@ -438,13 +464,13 @@ async function search(rawQuery, push = true) {
 // =====================================================
 // Plakáty
 // =====================================================
-function renderGrid(movies, target, { lazyPosters = false } = {}) {
-    target.innerHTML = '';
+function renderGrid(movies, target, { lazyPosters = false, append = false } = {}) {
+    if (!append) target.innerHTML = '';
 
     movies.forEach(movie => {
         const title = movie.nazev || movie.title || t('untitled');
         const year = movie.rok || movie.year || '';
-        const csfdUrl = movie.csfd_url || movie.csfdLink;
+        const csfdUrl = movie.csfd_url || movie.csfdLink || movie.csfdUrl;
         const normalized = { ...movie, title, year, csfdLink: csfdUrl };
 
         const card = document.createElement('button');
@@ -462,6 +488,13 @@ function renderGrid(movies, target, { lazyPosters = false } = {}) {
         img.src = movie.poster || FALLBACK_POSTER;
         img.onerror = () => { if (img.src !== FALLBACK_POSTER) img.src = FALLBACK_POSTER; };
         frame.appendChild(img);
+
+        if (movie.rating) {
+            const r = document.createElement('span');
+            r.className = 'poster-rating' + (movie.rating >= 70 ? ' high' : movie.rating < 30 ? ' low' : '');
+            r.textContent = `${movie.rating} %`;
+            frame.appendChild(r);
+        }
 
         const progress = getWatchProgressForCard(title, movie.isSeries);
         if (progress && progress.percent > 1 && progress.percent < 98) {
@@ -1290,10 +1323,17 @@ function toggleFullscreen() {
     }
 }
 
+function updateFullscreenButton() {
+    const on = !!document.fullscreenElement;
+    P.full.innerHTML = on ? ICONS.fsExit : ICONS.fsEnter;
+    P.full.setAttribute('aria-label', t(on ? 'exitFullscreen' : 'fullscreen'));
+}
+
 document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && screen.orientation?.unlock) {
         try { screen.orientation.unlock(); } catch { /* nepodporováno */ }
     }
+    updateFullscreenButton();
     wakeControls();
 });
 
@@ -1385,11 +1425,235 @@ function loadLibrary() {
 
     $('historySection').hidden = history.length === 0;
     $('favoritesSection').hidden = favorites.length === 0;
-    $('homeIntro').hidden = history.length > 0 || favorites.length > 0;
 
     if (history.length) renderGrid(history, $('historyGrid'));
     if (favorites.length) renderGrid(favorites, $('favoritesGrid'));
-    tvFocusFirst('#historyGrid .poster, #favoritesGrid .poster, #searchQuery', true);
+    loadDiscover();
+    tvFocusFirst('#historyGrid .poster, #discoverRows .poster, #favoritesGrid .poster, #searchQuery', true);
+}
+
+// =====================================================
+// Nabídka na hlavní stránce (z ČSFD přes náš server)
+// =====================================================
+const DISCOVER_LOCAL_TTL = 6 * 60 * 60 * 1000;   // v prohlížeči obnovit po 6 h (server sám po 24 h)
+let discoverMem = null;
+let discoverLoading = null;
+
+const GENRE_EN = {
+    'Akční': 'Action', 'Animovaný': 'Animation', 'Dobrodružný': 'Adventure', 'Dokumentární': 'Documentary', 'Drama': 'Drama',
+    'Fantasy': 'Fantasy', 'Historický': 'History', 'Horor': 'Horror', 'Katastrofický': 'Disaster', 'Komedie': 'Comedy',
+    'Krimi': 'Crime', 'Muzikál': 'Musical', 'Mysteriózní': 'Mystery', 'Pohádka': 'Fairy tale', 'Psychologický': 'Psychological',
+    'Rodinný': 'Family', 'Romantický': 'Romance', 'Sci-Fi': 'Sci-Fi', 'Sportovní': 'Sport', 'Thriller': 'Thriller',
+    'Válečný': 'War', 'Western': 'Western', 'Životopisný': 'Biography'
+};
+const genreLabel = (name) => (uiLang === 'en' && GENRE_EN[name]) || name;
+
+const SECTION_TITLE = { 'popular-movies': 'popularMovies', 'popular-series': 'popularSeries', 'top-movies': 'topMovies', 'top-series': 'topSeries' };
+
+async function getDiscover() {
+    if (discoverMem && Date.now() - discoverMem.t < DISCOVER_LOCAL_TTL) return discoverMem.data;
+    const cached = readJSON('discover_cache', null);
+    if (cached && cached.data && Date.now() - cached.t < DISCOVER_LOCAL_TTL) {
+        discoverMem = cached;
+        return cached.data;
+    }
+    if (!discoverLoading) {
+        discoverLoading = apiGet('/discover')
+            .then(data => {
+                if (data.error || !Array.isArray(data.sections)) throw new Error(data.error || 'bad data');
+                discoverMem = { t: Date.now(), data };
+                writeJSON('discover_cache', discoverMem);
+                return data;
+            })
+            .catch(err => {
+                if (cached && cached.data) return cached.data;   // radši starší nabídka než žádná
+                throw err;
+            })
+            .finally(() => { discoverLoading = null; });
+    }
+    return discoverLoading;
+}
+
+function rowSection({ id, title, items, seeAll, skeleton = false }) {
+    const sec = document.createElement('section');
+    sec.className = 'shelf row-shelf';
+    if (id) sec.dataset.row = id;
+
+    const head = document.createElement('div');
+    head.className = 'shelf-head';
+    const h = document.createElement('h2');
+    h.className = 'shelf-title';
+    h.textContent = title;
+    head.appendChild(h);
+    if (seeAll) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'see-all';
+        more.textContent = t('seeAll');
+        more.addEventListener('click', seeAll);
+        head.appendChild(more);
+    }
+
+    const wrap = document.createElement('div');
+    wrap.className = 'row-wrap';
+    const row = document.createElement('div');
+    row.className = 'poster-row';
+    if (skeleton) {
+        row.innerHTML = '<span class="poster skeleton"><span class="poster-frame"></span></span>'.repeat(7);
+    } else {
+        renderGrid(items, row);
+    }
+    const prev = document.createElement('button');
+    const next = document.createElement('button');
+    prev.className = 'row-nav prev'; next.className = 'row-nav next';
+    prev.type = next.type = 'button';
+    prev.tabIndex = next.tabIndex = -1;
+    prev.setAttribute('aria-label', t('scrollLeft'));
+    next.setAttribute('aria-label', t('scrollRight'));
+    prev.innerHTML = ICONS.prev; next.innerHTML = ICONS.next;
+    prev.addEventListener('click', () => row.scrollBy({ left: -row.clientWidth * 0.85, behavior: 'smooth' }));
+    next.addEventListener('click', () => row.scrollBy({ left: row.clientWidth * 0.85, behavior: 'smooth' }));
+    wrap.append(prev, row, next);
+
+    sec.append(head, wrap);
+    return sec;
+}
+
+function genreSection(genres) {
+    const sec = document.createElement('section');
+    sec.className = 'shelf';
+    sec.dataset.row = 'genres';
+    sec.innerHTML = `<h2 class="shelf-title">${t('genresTitle')}</h2>`;
+    const chips = document.createElement('div');
+    chips.className = 'genre-chips';
+    genres.forEach(g => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'genre-chip';
+        b.textContent = genreLabel(g.name);
+        b.addEventListener('click', () => openGenre(g.id, g.name, 'movie'));
+        chips.appendChild(b);
+    });
+    sec.appendChild(chips);
+    return sec;
+}
+
+let discoverRenderId = 0;
+
+async function loadDiscover() {
+    const host = $('discoverRows');
+    const renderId = ++discoverRenderId;
+    const history = readJSON('watch_history', []);
+    const favorites = readJSON('favorites', []);
+
+    // Kostra hned, ať stránka neposkakuje
+    if (!discoverMem) {
+        host.innerHTML = '';
+        host.append(rowSection({ title: t('popularMovies'), skeleton: true }), rowSection({ title: t('popularSeries'), skeleton: true }));
+    }
+
+    let data;
+    try {
+        data = await getDiscover();
+    } catch {
+        if (renderId !== discoverRenderId) return;
+        host.innerHTML = `<p class="status">${t('discoverFailed')}</p>`;
+        $('homeIntro').hidden = history.length > 0 || favorites.length > 0;
+        tvFocusFirst('#historyGrid .poster, #favoritesGrid .poster, #searchQuery', true);
+        return;
+    }
+    if (renderId !== discoverRenderId) return;
+    $('homeIntro').hidden = true;
+
+    const byId = Object.fromEntries(data.sections.map(sec => [sec.id, sec.items]));
+    const frag = document.createDocumentFragment();
+
+    // „Protože jsi sledoval…“ – místo pro řadu, doplní se, až dorazí podobné tituly
+    const becauseSlot = document.createElement('div');
+    frag.appendChild(becauseSlot);
+
+    const addRow = (id) => {
+        const items = byId[id];
+        if (!items || !items.length) return;
+        const isTop = id.startsWith('top-');
+        frag.appendChild(rowSection({
+            id, title: t(SECTION_TITLE[id]), items: isTop ? items.slice(0, 20) : items,
+            seeAll: isTop ? () => openList(id) : null
+        }));
+    };
+    addRow('popular-movies');
+    addRow('popular-series');
+    if (data.genres && data.genres.length) frag.appendChild(genreSection(data.genres));
+    addRow('top-movies');
+    addRow('top-series');
+
+    host.innerHTML = '';
+    host.appendChild(frag);
+    // Na TV začít na prvním plakátu, dokud uživatel sám nic nevybral
+    tvFocusFirst('#historyGrid .poster, #discoverRows .poster, #searchQuery', tvInteracted || document.activeElement !== searchInput);
+
+    // Doporučení podle posledního sledovaného titulu z ČSFD
+    const seed = history.find(h => /\/film\/\d+/.test(h.csfd_url || h.csfdLink || h.csfdUrl || ''));
+    if (seed) {
+        const id = (seed.csfd_url || seed.csfdLink || seed.csfdUrl).match(/\/film\/(\d+)/)[1];
+        try {
+            const sim = await apiGet(`/csfd-similar?id=${id}`);
+            if (renderId !== discoverRenderId || !sim.items || !sim.items.length) return;
+            becauseSlot.replaceWith(rowSection({ id: 'because', title: t('becauseWatched', { title: seed.title }), items: sim.items }));
+        } catch { /* bez doporučení */ }
+    }
+}
+
+// Celý žebříček (Zobrazit vše)
+async function openList(listId, push = true) {
+    if (push) history.pushState({ view: 'list', list: listId }, '', `#${listId}`);
+    const title = t(SECTION_TITLE[listId] || 'topMovies');
+    document.title = `${title} – Moviora`;
+    searchInput.value = '';
+    setView('results');
+    $('resultsTitle').textContent = title;
+    resultsDiv.innerHTML = `<p class="status">${t('searching')}</p>`;
+    try {
+        const data = await getDiscover();
+        const items = (data.sections.find(sec => sec.id === listId) || {}).items || [];
+        if (!items.length) { resultsDiv.innerHTML = `<p class="status">${t('listEmpty')}</p>`; return; }
+        renderGrid(items, resultsDiv);
+        tvFocusFirst('#results .poster', true);
+    } catch {
+        resultsDiv.innerHTML = `<p class="status error">${t('discoverFailed')}</p>`;
+    }
+}
+
+// Žánr – filmy nebo seriály
+async function openGenre(id, name, type = 'movie', push = true) {
+    if (push) history.pushState({ view: 'genre', id, name, type }, '', `#zanr-${id}-${type}`);
+    document.title = `${genreLabel(name)} – Moviora`;
+    searchInput.value = '';
+    setView('results');
+    $('resultsTitle').textContent = genreLabel(name);
+
+    const tools = $('resultsTools');
+    tools.innerHTML = `
+        <div class="segmented" role="group" aria-label="${t('genresTitle')}">
+            <button type="button" data-type="movie" aria-pressed="${type === 'movie'}">${t('typeMovies')}</button>
+            <button type="button" data-type="series" aria-pressed="${type === 'series'}">${t('typeSeries')}</button>
+        </div>`;
+    tools.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+        if (b.dataset.type === type) return;
+        history.replaceState({ view: 'genre', id, name, type: b.dataset.type }, '', `#zanr-${id}-${b.dataset.type}`);
+        openGenre(id, name, b.dataset.type, false);
+    }));
+
+    resultsDiv.innerHTML = `<p class="status">${t('searching')}</p>`;
+    try {
+        const data = await apiGet(`/discover/genre?id=${encodeURIComponent(id)}&type=${type}`);
+        if (data.error) throw new Error(data.error);
+        if (!data.items || !data.items.length) { resultsDiv.innerHTML = `<p class="status">${t('listEmpty')}</p>`; return; }
+        renderGrid(data.items, resultsDiv);
+        tvFocusFirst('#results .poster, #resultsTools button[aria-pressed="true"]', true);
+    } catch {
+        resultsDiv.innerHTML = `<p class="status error">${t('discoverFailed')}</p>`;
+    }
 }
 
 // Do knihovny ukládáme jen to, co je potřeba pro kartu a detail
@@ -1437,6 +1701,7 @@ function applyStaticI18n() {
     document.querySelectorAll('[data-ui-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.uiLang === uiLang)));
     updatePlayButton();
     updateMuteButton();
+    if (typeof updateFullscreenButton === 'function') updateFullscreenButton();
 }
 
 function setUiLang(lang) {
@@ -1455,7 +1720,9 @@ function setUiLang(lang) {
         else if (loading) setPlayButton('loading');
         else fetchAndRenderStreams();
     } else if (!resultsContainer.hidden) {
-        $('resultsTitle').textContent = t('resultsFor', { q: searchInput.value });
+        renderRoute(history.state);
+    } else if (!libraryContainer.hidden) {
+        loadDiscover();
     }
     if (!playerEl.hidden && currentMovieData) {
         P.subtitle.textContent = currentMovieData.isSeries ? t('seasonEp', { s: currentSeason, e: currentEpisode }) : P.subtitle.textContent;
@@ -1652,6 +1919,9 @@ function initialTvMode() {
 
 function setTvMode(on, announce = false) {
     document.documentElement.classList.toggle('tv', on);
+    searchInput.readOnly = on;
+    searchInput.inputMode = on ? 'none' : 'search';
+    if (!on && !tvKb.hidden) closeKeyboard();
     const btn = $('tvToggle');
     btn.setAttribute('aria-pressed', String(on));
     btn.querySelector('span').textContent = t(on ? 'tvModeOff' : 'tvModeOn');
@@ -1674,6 +1944,7 @@ function isVisible(el) {
 function focusScope() {
     const dlg = document.querySelector('dialog[open]');
     if (dlg) return dlg;
+    if (!tvKb.hidden) return tvKb;
     if (!playerEl.hidden) return playerEl;
     return document.body;
 }
@@ -1681,7 +1952,7 @@ function focusScope() {
 function focusCandidates() {
     const scope = focusScope();
     return Array.from(scope.querySelectorAll(FOCUSABLE)).filter(el =>
-        isVisible(el) && !el.closest('[hidden]') && (scope !== document.body || !playerEl.contains(el)));
+        isVisible(el) && !el.closest('[hidden]') && el.tabIndex !== -1 && (scope !== document.body || !playerEl.contains(el)));
 }
 
 function tvFocus(el) {
@@ -1702,8 +1973,11 @@ function tvFocusFirst(selector, onlyIfLost = false) {
     const active = document.activeElement;
     if (onlyIfLost && isVisible(active) && active !== document.body && focusScope().contains(active)
         && !active.closest('[hidden]')) return;
-    const el = Array.from(document.querySelectorAll(selector)).find(n => isVisible(n) && !n.closest('[hidden]'));
-    if (el) tvFocus(el);
+    // selektory zkoušet v pořadí, v jakém jsou zadané (priorita), ne v pořadí na stránce
+    for (const sel of selector.split(',')) {
+        const el = Array.from(document.querySelectorAll(sel.trim())).find(n => isVisible(n) && !n.closest('[hidden]'));
+        if (el) { tvFocus(el); return; }
+    }
 }
 
 // Najde nejbližší prvek ve směru šipky
@@ -1745,6 +2019,7 @@ document.addEventListener('focusout', (e) => {
 function tvBack() {
     const dlg = document.querySelector('dialog[open]');
     if (dlg) { dlg.close(); return true; }
+    if (!tvKb.hidden) { closeKeyboard(); return true; }
     if (!playerEl.hidden) { closePlayer(); return true; }
     const view = history.state && history.state.view;
     if (view && view !== 'home') { history.back(); return true; }
@@ -1803,8 +2078,11 @@ function handleTvPlayerKey(e) {
     return false;
 }
 
+let tvInteracted = false;
+
 document.addEventListener('keydown', (e) => {
     if (!isTv() || e.ctrlKey || e.metaKey || e.altKey) return;
+    tvInteracted = true;
 
     const done = () => { e.preventDefault(); e.stopImmediatePropagation(); };
     const active = document.activeElement;
@@ -1813,6 +2091,21 @@ document.addEventListener('keydown', (e) => {
     if (!playerEl.hidden) {
         if (handleTvPlayerKey(e)) done();
         return;
+    }
+
+    // Klávesnice na obrazovce a psaní číslicemi (jen ve vyhledávání)
+    const kbOpen = !tvKb.hidden;
+    if (kbOpen || active === searchInput) {
+        const digit = digitFromKey(e);
+        if (digit !== null) { t9Press(digit); return done(); }
+        if (kbOpen) {
+            if (e.key === 'Backspace' || e.keyCode === 8) { kbDelete(); return done(); }
+            // fyzická klávesnice připojená k TV
+            if (e.key && e.key.length === 1 && !keyIs(e, 'ok')) { kbInsert(e.key.toLowerCase()); return done(); }
+        } else if (keyIs(e, 'ok')) {
+            openKeyboard();
+            return done();
+        }
     }
 
     // Výběr řady/dílu: OK přepne do úprav, šipky nahoru/dolů mění hodnotu
@@ -1851,6 +2144,138 @@ document.addEventListener('keydown', (e) => {
     if (keyIs(e, 'up')) { moveFocus('up'); return done(); }
     if (keyIs(e, 'down')) { moveFocus('down'); return done(); }
 }, true);
+
+// =====================================================
+// Klávesnice na obrazovce pro TV + psaní číslicemi (T9)
+// =====================================================
+const tvKb = $('tvKeyboard');
+const KB_LAYOUTS = {
+    abc: 'abcdefghijklmnopqrstuvwxyz'.split('').concat(["'", '-']),
+    accents: 'áčďéěíňóřšťúůýž'.split(''),
+    num: '1234567890.,:!?&'.split('')
+};
+let kbLayout = 'abc';
+
+// Písmena na číslicích jako na starém mobilu (s češtinou)
+const T9 = {
+    1: ['.', ',', '?', '!', '-', '1'], 2: ['a', 'b', 'c', 'á', 'č', '2'], 3: ['d', 'e', 'f', 'ď', 'é', 'ě', '3'],
+    4: ['g', 'h', 'i', 'í', '4'], 5: ['j', 'k', 'l', '5'], 6: ['m', 'n', 'o', 'ň', 'ó', '6'],
+    7: ['p', 'q', 'r', 's', 'ř', 'š', '7'], 8: ['t', 'u', 'v', 'ť', 'ú', 'ů', '8'], 9: ['w', 'x', 'y', 'z', 'ý', 'ž', '9'],
+    0: [' ', '0']
+};
+const T9_TIMEOUT = 1200;
+let t9State = null;   // { digit, index, timer }
+
+function digitFromKey(e) {
+    if (/^[0-9]$/.test(e.key)) return +e.key;
+    if (e.keyCode >= 48 && e.keyCode <= 57) return e.keyCode - 48;
+    if (e.keyCode >= 96 && e.keyCode <= 105) return e.keyCode - 96;   // numerická klávesnice / některé ovladače
+    return null;
+}
+
+function renderKeyboardKeys() {
+    const grid = $('kbKeys');
+    grid.innerHTML = KB_LAYOUTS[kbLayout].map(ch =>
+        `<button type="button" class="kb-key" data-ch="${escapeHtml(ch)}">${escapeHtml(ch)}</button>`).join('');
+    grid.querySelectorAll('.kb-key').forEach(b => b.addEventListener('click', () => kbInsert(b.dataset.ch)));
+    tvKb.querySelectorAll('[data-layout]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.layout === kbLayout)));
+}
+
+function renderKeyboardText() {
+    const val = searchInput.value;
+    const pending = t9State ? 1 : 0;
+    const out = $('kbText');
+    if (!val) {
+        out.innerHTML = `<span class="kb-placeholder">${t('kbPlaceholder')}</span><span class="kb-caret"></span>`;
+        return;
+    }
+    const done = escapeHtml(val.slice(0, val.length - pending));
+    const cur = pending ? `<span class="kb-pending">${escapeHtml(val.slice(-1)).replace(' ', '&nbsp;')}</span>` : '';
+    out.innerHTML = `${done.replace(/ /g, '&nbsp;')}${cur}<span class="kb-caret"></span>`;
+}
+
+function renderT9Hint() {
+    const hint = $('kbT9');
+    if (!t9State) { hint.innerHTML = `<span class="kb-hint-text">${t('kbHint')}</span>`; return; }
+    const chars = T9[t9State.digit];
+    hint.innerHTML = `<kbd>${t9State.digit}</kbd>` + chars.map((c, i) =>
+        `<span class="t9-char${i === t9State.index ? ' on' : ''}">${c === ' ' ? '␣' : escapeHtml(c)}</span>`).join('');
+}
+
+function openKeyboard() {
+    if (!tvKb.hidden) return;
+    tvKb.hidden = false;
+    document.body.classList.add('kb-open');
+    renderKeyboardKeys();
+    renderKeyboardText();
+    renderT9Hint();
+    tvFocus(tvKb.querySelector('.kb-key'));
+}
+
+function closeKeyboard() {
+    t9Commit();
+    tvKb.hidden = true;
+    document.body.classList.remove('kb-open');
+    tvFocus(searchInput);
+}
+
+function kbInsert(ch) {
+    t9Commit();
+    searchInput.value += ch;
+    renderKeyboardText();
+}
+
+function kbDelete() {
+    t9Commit();
+    searchInput.value = searchInput.value.slice(0, -1);
+    renderKeyboardText();
+}
+
+function t9Commit() {
+    if (!t9State) return;
+    clearTimeout(t9State.timer);
+    t9State = null;
+    if (!tvKb.hidden) { renderKeyboardText(); renderT9Hint(); }
+}
+
+function t9Press(digit) {
+    if (tvKb.hidden) openKeyboard();
+    const chars = T9[digit];
+    if (t9State && t9State.digit === digit) {
+        // stejná číslice: přepsat poslední písmeno dalším v pořadí
+        clearTimeout(t9State.timer);
+        t9State.index = (t9State.index + 1) % chars.length;
+        searchInput.value = searchInput.value.slice(0, -1) + chars[t9State.index];
+    } else {
+        t9Commit();
+        t9State = { digit, index: 0, timer: null };
+        searchInput.value += chars[0];
+    }
+    t9State.timer = setTimeout(t9Commit, T9_TIMEOUT);
+    renderKeyboardText();
+    renderT9Hint();
+}
+
+function kbSubmit() {
+    t9Commit();
+    const q = searchInput.value.trim();
+    tvKb.hidden = true;
+    document.body.classList.remove('kb-open');
+    if (q) search(q);
+    else tvFocus(searchInput);
+}
+
+$('kbSpace').addEventListener('click', () => kbInsert(' '));
+$('kbDelete').addEventListener('click', kbDelete);
+$('kbClear').addEventListener('click', () => { t9Commit(); searchInput.value = ''; renderKeyboardText(); });
+$('kbSubmit').addEventListener('click', kbSubmit);
+tvKb.querySelectorAll('[data-layout]').forEach(b => b.addEventListener('click', () => {
+    kbLayout = b.dataset.layout;
+    renderKeyboardKeys();
+    tvFocus(tvKb.querySelector('.kb-key'));
+}));
+// Ukazovátko (např. LG Magic Remote) – klik do pole otevře klávesnici
+searchInput.addEventListener('click', () => { if (isTv()) openKeyboard(); });
 
 // =====================================================
 // Start
