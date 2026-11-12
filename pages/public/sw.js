@@ -4,7 +4,7 @@
 // aby šla otevřít i bez připojení a ukázala obrazovku offline.
 // Data z API se nikdy neukládají.
 // =====================================================
-const VERSION = 'moviora-v1';
+const VERSION = 'moviora-v2';
 const SHELL = [
     '/',
     '/index.html',

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Moviora – ovládací panel</title>
+<link rel="icon" href="/logo.png">
+<style>
+  :root {
+    --bg: #0b0b0d; --panel: #141418; --panel2: #1b1b21; --line: #2a2a32;
+    --text: #ececf1; --muted: #8c8c99; --red: #e50914; --red2: #ff2a36;
+    --green: #2ecc71; --amber: #f5a623;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input { font: inherit; }
+  a { color: var(--red2); }
+  .hidden { display: none !important; }
+
+  /* Přihlášení */
+  .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+  .login form { width: 100%; max-width: 360px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 28px; }
+  .login img { display: block; height: 52px; margin: 0 auto 6px; }
+  .login h1 { text-align: center; font-size: 15px; font-weight: 600; color: var(--muted); margin: 0 0 22px; letter-spacing: .08em; text-transform: uppercase; }
+
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 5px; }
+  input[type=text], input[type=password], input[type=email] {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--text); outline: none;
+  }
+  input:focus { border-color: var(--red); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); cursor: pointer; white-space: nowrap; }
+  .btn:hover { border-color: #444; background: #22222a; }
+  .btn.primary { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+  .btn.primary:hover { background: var(--red2); }
+  .btn.danger { color: #ff6b6b; }
+  .btn:disabled { opacity: .5; cursor: wait; }
+  .btn.block { width: 100%; margin-top: 20px; }
+  .err { color: #ff6b6b; font-size: 13px; min-height: 18px; margin-top: 10px; }
+
+  /* Panel */
+  header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px; padding: 12px 20px; background: rgba(11,11,13,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  header img { height: 30px; }
+  header .title { font-weight: 600; }
+  header .spacer { flex: 1; }
+  header .who { color: var(--muted); font-size: 13px; }
+  main { max-width: 1180px; margin: 0 auto; padding: 20px; display: grid; gap: 16px; grid-template-columns: repeat(12, 1fr); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; grid-column: span 12; min-width: 0; }
+  .card h2 { margin: 0 0 14px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  @media (min-width: 860px) {
+    .s4 { grid-column: span 4; } .s6 { grid-column: span 6; } .s8 { grid-column: span 8; }
+  }
+
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .switch-row:last-child { border-bottom: 0; }
+  .switch-row b { display: block; }
+  .switch-row small { color: var(--muted); }
+  .switch { position: relative; width: 52px; height: 28px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span { position: absolute; inset: 0; border-radius: 99px; background: #3a3a44; cursor: pointer; transition: .2s; }
+  .switch span::before { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; border-radius: 50%; background: #fff; transition: .2s; }
+  .switch input:checked + span { background: var(--green); }
+  .switch input:checked + span::before { transform: translateX(24px); }
+  .switch input:focus-visible + span { outline: 2px solid var(--red); outline-offset: 2px; }
+
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 560px) { .stats { grid-template-columns: repeat(3, 1fr); } }
+  .spark rect.base { fill: #26262e; }
+  .stat { background: var(--panel2); border-radius: 10px; padding: 12px; }
+  .stat small { display: block; color: var(--muted); font-size: 12px; }
+  .stat b { font-size: 22px; font-variant-numeric: tabular-nums; }
+  .spark { width: 100%; height: 56px; margin-top: 12px; display: block; }
+
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 10px; border-radius: 99px; background: var(--panel2); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.ok { background: var(--green); } .dot.bad { background: var(--red2); } .dot.warn { background: var(--amber); }
+
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 14px; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; overflow-wrap: anywhere; }
+  .pw { font-family: ui-monospace, Consolas, monospace; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+  .logs { height: 340px; overflow: auto; background: #08080a; border: 1px solid var(--line); border-radius: 8px; padding: 10px; font: 12.5px/1.5 ui-monospace, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
+  .logs .warn { color: var(--amber); } .logs .error { color: #ff6b6b; }
+  .logs time { color: #5c5c68; margin-right: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td { padding: 5px 0; border-bottom: 1px solid var(--line); }
+  td:last-child { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #22222a; border: 1px solid var(--line); border-left: 4px solid var(--green); padding: 10px 16px; border-radius: 8px; max-width: calc(100% - 32px); z-index: 20; box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+  .toast.bad { border-left-color: var(--red2); }
+  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 22px; width: min(420px, calc(100% - 32px)); }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  dialog h3 { margin: 0 0 6px; }
+</style>
+</head>
+<body>
+
+<!-- Přihlášení -->
+<section class="login hidden" id="loginView">
+  <form id="loginForm" autocomplete="on">
+    <img src="/logo.png" alt="Moviora">
+    <h1>Ovládací panel</h1>
+    <label for="lUser">Jméno</label>
+    <input type="text" id="lUser" autocomplete="username" required autofocus>
+    <label for="lPass">Heslo</label>
+    <input type="password" id="lPass" autocomplete="current-password" required>
+    <button class="btn primary block" type="submit">Přihlásit</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</section>
+
+<!-- Panel -->
+<div class="hidden" id="appView">
+  <header>
+    <img src="/logo.png" alt="">
+    <span class="title">Ovládací panel</span>
+    <span class="pill" id="liveState"><span class="dot"></span><span>…</span></span>
+    <span class="spacer"></span>
+    <span class="who" id="who"></span>
+    <button class="btn" id="logoutBtn">Odhlásit</button>
+  </header>
+
+  <main>
+    <section class="card s4">
+      <h2>Funkce</h2>
+      <div class="switch-row">
+        <div><b>Moviora API</b><small>Vypnuté API vrací 503 – web ukáže „Server je offline“.</small></div>
+        <label class="switch"><input type="checkbox" id="tApi"><span></span></label>
+      </div>
+      <div class="switch-row">
+        <div><b>Rychlá synchronizace</b><small>Přenos profilu kódem mezi zařízeními.</small></div>
+        <label class="switch"><input type="checkbox" id="tSync"><span></span></label>
+      </div>
+    </section>
+
+    <section class="card s8">
+      <h2>Stav serveru</h2>
+      <div class="stats">
+        <div class="stat"><small>Běží</small><b id="sUptime">–</b></div>
+        <div class="stat"><small>Paměť</small><b id="sMem">–</b></div>
+        <div class="stat"><small>Požadavky / min</small><b id="sMin">–</b></div>
+        <div class="stat"><small>Za hodinu</small><b id="sHour">–</b></div>
+        <div class="stat"><small>Celkem</small><b id="sTotal">–</b></div>
+        <div class="stat"><small>Čekající synchronizace</small><b id="sSync">–</b></div>
+      </div>
+      <svg class="spark" id="spark" viewBox="0 0 600 56" preserveAspectRatio="none" aria-label="Požadavky za posledních 60 minut"></svg>
+    </section>
+
+    <section class="card s6">
+      <h2>prehraj.to</h2>
+      <dl class="kv">
+        <dt>Stav</dt><dd id="pjState">–</dd>
+        <dt>E-mail</dt><dd id="pjEmail">–</dd>
+        <dt>Heslo</dt><dd><span class="pw" id="pjPass">••••••••</span> <button class="btn" id="pjReveal" style="padding:2px 10px;font-size:13px">Zobrazit</button></dd>
+        <dt>Přihlášeno</dt><dd id="pjLast">–</dd>
+      </dl>
+      <div class="row">
+        <button class="btn" id="pjRelogin">Přihlásit znovu</button>
+        <button class="btn" id="pjEdit">Změnit údaje</button>
+      </div>
+      <form id="pjForm" class="hidden">
+        <label for="pjNewEmail">Nový e-mail</label>
+        <input type="email" id="pjNewEmail" autocomplete="off" required>
+        <label for="pjNewPass">Nové heslo</label>
+        <input type="password" id="pjNewPass" autocomplete="new-password" required>
+        <div class="row">
+          <button class="btn primary" type="submit">Uložit a přihlásit</button>
+          <button class="btn" type="button" id="pjCancel">Zrušit</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card s6">
+      <h2>Údržba</h2>
+      <dl class="kv">
+        <dt>Nabídka z ČSFD</dt><dd id="dUpdated">–</dd>
+        <dt>Mezipaměti</dt><dd id="dCaches">–</dd>
+      </dl>
+      <div class="row">
+        <button class="btn" data-action="refreshDiscover">Obnovit nabídku</button>
+        <button class="btn" data-action="clearCaches">Vyčistit mezipaměti</button>
+        <button class="btn danger" data-action="restart">Restartovat server</button>
+      </div>
+      <h2 style="margin-top:20px">Nejčastější požadavky</h2>
+      <table id="paths"></table>
+    </section>
+
+    <section class="card s8">
+      <h2>Log</h2>
+      <div class="logs" id="logs" aria-live="polite"></div>
+    </section>
+
+    <section class="card s4">
+      <h2>Účet správce</h2>
+      <form id="accForm" autocomplete="off">
+        <label for="aUser">Jméno</label>
+        <input type="text" id="aUser" autocomplete="username">
+        <label for="aNew">Nové heslo (prázdné = beze změny)</label>
+        <input type="password" id="aNew" autocomplete="new-password" minlength="8">
+        <label for="aCur">Současné heslo</label>
+        <input type="password" id="aCur" autocomplete="current-password" required>
+        <div class="row"><button class="btn primary" type="submit">Uložit</button></div>
+        <div class="err" id="accErr"></div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<dialog id="confirmDlg">
+  <h3 id="cTitle"></h3>
+  <p id="cText" style="color:var(--muted)"></p>
+  <div class="row" style="justify-content:flex-end">
+    <button class="btn" value="no" id="cNo">Zrušit</button>
+    <button class="btn primary" value="yes" id="cYes">Potvrdit</button>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  let statusTimer = null, logTimer = null, lastLog = 0, offline = false;
+
+  async function api(path, body) {
+    const res = await fetch('/api/' + path, {
+      method: body === undefined ? 'GET' : 'POST',
+      headers: { 'X-Moviora-Admin': '1', ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: 'same-origin'
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && path !== 'login') { showLogin(); throw new Error(data.error || 'Nepřihlášen'); }
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    return data;
+  }
+
+  function toast(text, bad) {
+    const el = document.createElement('div');
+    el.className = 'toast' + (bad ? ' bad' : '');
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3800);
+  }
+
+  function confirmBox(title, text) {
+    return new Promise(resolve => {
+      const d = $('confirmDlg');
+      $('cTitle').textContent = title; $('cText').textContent = text;
+      $('cYes').onclick = () => { d.close(); resolve(true); };
+      $('cNo').onclick = () => { d.close(); resolve(false); };
+      d.oncancel = () => resolve(false);
+      d.showModal();
+    });
+  }
+
+  const fmtUptime = (s) => {
+    const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+    return d ? `${d} d ${h} h` : h ? `${h} h ${m} min` : `${m} min`;
+  };
+  const fmtTime = (iso) => iso ? new Date(iso).toLocaleString('cs-CZ') : '–';
+
+  // ---------- přihlášení ----------
+  function showLogin() {
+    clearInterval(statusTimer); clearInterval(logTimer);
+    $('appView').classList.add('hidden');
+    $('loginView').classList.remove('hidden');
+    $('lPass').value = '';
+    $('lUser').focus();
+  }
+  function showApp() {
+    $('loginView').classList.add('hidden');
+    $('appView').classList.remove('hidden');
+    lastLog = 0; $('logs').textContent = '';
+    refresh(); pullLogs();
+    statusTimer = setInterval(refresh, 5000);
+    logTimer = setInterval(pullLogs, 3000);
+  }
+
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.submitter; btn.disabled = true; $('loginErr').textContent = '';
+    try {
+      await api('login', { username: $('lUser').value, password: $('lPass').value });
+      showApp();
+    } catch (err) { $('loginErr').textContent = err.message; }
+    finally { btn.disabled = false; }
+  });
+
+  $('logoutBtn').onclick = async () => { try { await api('logout', {}); } catch {} showLogin(); };
+
+  // ---------- stav ----------
+  function setLive(ok, text) {
+    const p = $('liveState');
+    p.querySelector('.dot').className = 'dot ' + ok;
+    p.lastElementChild.textContent = text;
+  }
+
+  function drawSpark(values) {
+    const max = Math.max(1, ...values), w = 600 / values.length;
+    $('spark').innerHTML = values.map((v, i) => {
+      const h = Math.max(v ? 2 : 0, v / max * 52);
+      return `<rect class="base" x="${i * w + 1}" y="54" width="${w - 2}" height="2"></rect>` + `<rect x="${i * w + 1}" y="${56 - h}" width="${w - 2}" height="${h}" rx="1.5" fill="${i === values.length - 1 ? '#e50914' : '#5a5a66'}"><title>${v} požadavků</title></rect>`;
+    }).join('');
+  }
+
+  async function refresh() {
+    try {
+      const s = await api('status');
+      offline = false;
+      $('who').textContent = s.user;
+      if (document.activeElement !== $('aUser')) $('aUser').value = $('aUser').value || s.user;
+      $('tApi').checked = s.apiEnabled;
+      $('tSync').checked = s.syncEnabled;
+      setLive(s.apiEnabled ? 'ok' : 'warn', s.apiEnabled ? 'API běží' : 'API vypnuté');
+      $('sUptime').textContent = fmtUptime(s.uptime);
+      $('sMem').textContent = s.memoryMb + ' MB';
+      $('sMin').textContent = s.requests.lastMinute;
+      $('sHour').textContent = s.requests.lastHour;
+      $('sTotal').textContent = s.requests.total;
+      $('sSync').textContent = s.syncEnabled ? s.sync.stored : 'vypnuto';
+      drawSpark(s.requests.perMinute);
+
+      const pj = s.prehrajto;
+      $('pjState').innerHTML = pj.loggedIn ? '<span class="pill"><span class="dot ok"></span>Přihlášeno</span>'
+        : `<span class="pill"><span class="dot bad"></span>Nepřihlášeno</span>`;
+      if (!pj.loggedIn && pj.lastError) $('pjState').insertAdjacentText('beforeend', ' ' + pj.lastError);
+      $('pjEmail').textContent = pj.email || '–';
+      $('pjLast').textContent = fmtTime(pj.lastLogin);
+
+      $('dUpdated').textContent = fmtTime(s.discover.updated) + (s.discover.sections.length ? ' · ' + s.discover.sections.map(x => x.count).join(' / ') + ' titulů' : '');
+      $('dCaches').textContent = `ČSFD ${s.caches.csfd} · IMDb ${s.caches.imdb} · zdroje ${s.caches.streams} · žánry ${s.caches.genres} · filtry ${s.caches.browse}`;
+      $('paths').innerHTML = '';
+      for (const [p, n] of Object.entries(s.requests.byPath)) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td></td><td></td>';
+        tr.firstChild.textContent = p; tr.lastChild.textContent = n;
+        $('paths').appendChild(tr);
+      }
+    } catch (e) {
+      if (!offline && !$('appView').classList.contains('hidden')) setLive('bad', 'Server neodpovídá');
+      offline = true;
+    }
+  }
+
+  async function pullLogs() {
+    try {
+      const { lines } = await api('logs?since=' + lastLog);
+      if (!lines.length) return;
+      const box = $('logs');
+      const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 30;
+      for (const l of lines) {
+        const div = document.createElement('div');
+        div.className = l.level;
+        const t = document.createElement('time');
+        t.textContent = new Date(l.t).toLocaleTimeString('cs-CZ');
+        div.append(t, l.line);
+        box.appendChild(div);
+        lastLog = l.t;
+      }
+      while (box.childElementCount > 400) box.firstChild.remove();
+      if (atBottom) box.scrollTop = box.scrollHeight;
+    } catch {}
+  }
+
+  // ---------- přepínače ----------
+  for (const [id, key, label] of [['tApi', 'apiEnabled', 'Moviora API'], ['tSync', 'syncEnabled', 'Synchronizace']]) {
+    $(id).addEventListener('change', async (e) => {
+      const value = e.target.checked;
+      if (key === 'apiEnabled' && !value && !(await confirmBox('Vypnout API?', 'Web přestane fungovat, dokud API znovu nezapneš.'))) {
+        e.target.checked = true; return;
+      }
+      try {
+        await api('toggle', { key, value });
+        toast(`${label}: ${value ? 'zapnuto' : 'vypnuto'}`);
+        refresh();
+      } catch (err) { e.target.checked = !value; toast(err.message, true); }
+    });
+  }
+
+  // ---------- prehraj.to ----------
+  let revealed = false;
+  $('pjReveal').onclick = async () => {
+    if (revealed) { $('pjPass').textContent = '••••••••'; $('pjReveal').textContent = 'Zobrazit'; revealed = false; return; }
+    try {
+      const c = await api('prehrajto');
+      $('pjPass').textContent = c.password || '(není)';
+      $('pjReveal').textContent = 'Skrýt'; revealed = true;
+      setTimeout(() => { if (revealed) $('pjReveal').click(); }, 20000);
+    } catch (err) { toast(err.message, true); }
+  };
+  $('pjEdit').onclick = async () => {
+    $('pjForm').classList.remove('hidden');
+    $('pjNewEmail').value = $('pjEmail').textContent === '–' ? '' : $('pjEmail').textContent;
+    $('pjNewPass').value = '';
+    $('pjNewPass').focus();
+  };
+  $('pjCancel').onclick = () => $('pjForm').classList.add('hidden');
+  $('pjForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.submitter; btn.disabled = true;
+    try {
+      const r = await api('prehrajto', { email: $('pjNewEmail').value, password: $('pjNewPass').value });
+      toast(r.message); $('pjForm').classList.add('hidden');
+    } catch (err) { toast(err.message, true); }
+    finally { btn.disabled = false; refresh(); }
+  });
+  $('pjRelogin').onclick = (e) => runAction('relogin', e.currentTarget);
+
+  // ---------- akce ----------
+  async function runAction(name, btn) {
+    if (name === 'restart' && !(await confirmBox('Restartovat server?', 'API bude pár sekund nedostupné.'))) return;
+    btn.disabled = true;
+    try {
+      const r = await api('action', { name });
+      toast(r.message);
+      if (name === 'restart') setTimeout(() => location.reload(), 4000);
+    } catch (err) { toast(err.message, true); }
+    finally { btn.disabled = false; refresh(); }
+  }
+  document.querySelectorAll('[data-action]').forEach(b => b.onclick = () => runAction(b.dataset.action, b));
+
+  // ---------- účet ----------
+  $('accForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('accErr').textContent = '';
+    try {
+      const r = await api('account', { username: $('aUser').value, newPassword: $('aNew').value, currentPassword: $('aCur').value });
+      $('aNew').value = ''; $('aCur').value = ''; $('aUser').value = r.user;
+      toast('Účet uložen');
+      refresh();
+    } catch (err) { $('accErr').textContent = err.message; }
+  });
+
+  // Start: zkusit existující relaci
+  api('status').then(showApp).catch(showLogin);
+})();
+</script>
+</body>
+</html>

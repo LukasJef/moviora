@@ -14,3 +14,9 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Server: nastavení z ovládacího panelu, certifikát, mezipaměť
+server/config.json
+server/admin-cert.pem
+server/admin-key.pem
+server/discover-cache.json

@@ -135,7 +135,31 @@ const I18N = {
         kbPlaceholder: 'Napiš název filmu nebo seriálu',
         kbHint: 'Čísla na ovladači píšou jako na mobilu: opakovaným stiskem 2 napíšeš a, b, c…',
         removeFromHistory: 'Odebrat z historie', removedFromHistory: 'Odebráno z historie: {title}',
-        notAvailable: 'Tento titul na Moviora není dostupný.'
+        notAvailable: 'Tento titul na Moviora není dostupný.',
+        mainNav: 'Hlavní nabídka', tabHome: 'Domů', tabSeries: 'Seriály', tabMovies: 'Filmy', tabFavorites: 'Oblíbené', tabContinue: 'Pokračovat',
+        heroLast: 'Naposledy jsi sledoval', heroPopular: 'Teď nejsledovanější', heroResume: 'Pokračovat', heroResumeEp: 'Pokračovat {ep}',
+        heroPlayEp: 'Přehrát {ep}', heroDetail: 'Detail', heroLeft: 'Zbývá {t}', heroMore: 'Další nabídka',
+        favoritesEmpty: 'Oblíbené zatím nemáš. Přidáš je hvězdičkou v detailu filmu nebo seriálu.',
+        continueEmpty: 'Tady se objeví, co začneš sledovat – i s místem, kde jsi skončil.',
+        removeFromFavorites: 'Odebrat z oblíbených', removedFromFavorites: 'Odebráno z oblíbených: {title}',
+        filters: 'Filtry', filterType: 'Typ', filterAll: 'Vše', filterGenre: 'Žánr', anyGenre: 'Všechny žánry', filterYear: 'Rok vydání',
+        applyFilters: 'Zobrazit', clearFilters: 'Zrušit filtry', editFilters: 'Upravit filtry', removeFilter: 'Zrušit filtr',
+        browseTitle: 'Procházet', yearsFrom: 'od {y}', yearsTo: 'do {y}',
+        filteredCount: 'Filtrům odpovídá {n} z {total}', noFilterMatch: 'Filtrům nic neodpovídá. Zkus je upravit nebo zrušit.',
+        options: 'Možnosti', close: 'Zavřít', cancel: 'Zrušit', back: 'Zpět',
+        optProfile: 'Profil', optProfileNote: 'Historie, rozkoukané díly, oblíbené a nastavení se ukládají jen v tomhle prohlížeči. Profil si můžeš uložit do souboru a načíst jinde.',
+        exportProfile: 'Exportovat profil', exportProfileSub: 'Uloží soubor .mw', importProfile: 'Importovat profil',
+        importProfileSub: 'Načte soubor .mw a sloučí ho s tímto profilem', exported: 'Profil uložen do souboru {f}',
+        importDone: 'Profil načten – v historii {h}, v oblíbených {f}', importBad: 'Tohle není platný soubor profilu Moviora.',
+        optSync: 'Rychlá synchronizace', optSyncNote: 'Přenese profil do jiného zařízení pomocí kódu. Na našem serveru zůstane nejvýš minutu a po přenesení se hned smaže.',
+        syncSend: 'Odeslat z tohoto zařízení', syncSendSub: 'Dostaneš šestimístný kód', syncReceive: 'Přijmout do tohoto zařízení',
+        syncReceiveSub: 'Zadáš kód z druhého zařízení', syncCodeHelp: 'Na druhém zařízení otevři Možnosti → Přijmout do tohoto zařízení a zadej kód:',
+        syncLeft: 'Kód platí ještě {s} s', syncExpired: 'Kód vypršel. Pokud se profil nepřenesl, vytvoř nový.',
+        syncCodeLabel: 'Kód z druhého zařízení', syncReceiveBtn: 'Přijmout profil', syncFailed: 'Synchronizace se nepovedla: {e}',
+        syncInvalidCode: 'Zadej šestimístný kód.', optApp: 'Aplikace', installAppSub: 'Moviora jako aplikace na ploše',
+        tvModeSub: 'Ovládání šipkami a dálkovým ovladačem',
+        share: 'Sdílet', linkCopied: 'Odkaz zkopírován', sharedLoading: 'Otevírám sdílený titul…',
+        sharedNotFound: 'Sdílený film se nepodařilo najít.', goHome: 'Na hlavní stránku'
     },
     en: {
         homeLink: 'Moviora – home', uiLangGroup: 'Site language',
@@ -198,7 +222,31 @@ const I18N = {
         kbPlaceholder: 'Type a movie or show title',
         kbHint: 'Number keys on the remote type like an old phone: press 2 repeatedly for a, b, c…',
         removeFromHistory: 'Remove from history', removedFromHistory: 'Removed from history: {title}',
-        notAvailable: 'This title isn’t available on Moviora.'
+        notAvailable: 'This title isn’t available on Moviora.',
+        mainNav: 'Main menu', tabHome: 'Home', tabSeries: 'TV shows', tabMovies: 'Movies', tabFavorites: 'Favourites', tabContinue: 'Continue',
+        heroLast: 'You last watched', heroPopular: 'Most watched right now', heroResume: 'Resume', heroResumeEp: 'Resume {ep}',
+        heroPlayEp: 'Play {ep}', heroDetail: 'Details', heroLeft: '{t} left', heroMore: 'More to watch',
+        favoritesEmpty: 'No favourites yet. Add them with the star on a movie or show page.',
+        continueEmpty: 'Anything you start watching shows up here, along with where you left off.',
+        removeFromFavorites: 'Remove from favourites', removedFromFavorites: 'Removed from favourites: {title}',
+        filters: 'Filters', filterType: 'Type', filterAll: 'All', filterGenre: 'Genre', anyGenre: 'All genres', filterYear: 'Release year',
+        applyFilters: 'Show results', clearFilters: 'Clear filters', editFilters: 'Edit filters', removeFilter: 'Remove filter',
+        browseTitle: 'Browse', yearsFrom: 'from {y}', yearsTo: 'until {y}',
+        filteredCount: '{n} of {total} match your filters', noFilterMatch: 'Nothing matches your filters. Try changing or clearing them.',
+        options: 'Options', close: 'Close', cancel: 'Cancel', back: 'Back',
+        optProfile: 'Profile', optProfileNote: 'History, episode progress, favourites and settings are stored only in this browser. You can save your profile to a file and load it somewhere else.',
+        exportProfile: 'Export profile', exportProfileSub: 'Saves a .mw file', importProfile: 'Import profile',
+        importProfileSub: 'Loads a .mw file and merges it into this profile', exported: 'Profile saved as {f}',
+        importDone: 'Profile loaded – {h} in history, {f} in favourites', importBad: 'This isn’t a valid Moviora profile file.',
+        optSync: 'Quick sync', optSyncNote: 'Moves your profile to another device with a code. It stays on our server for a minute at most and is deleted as soon as it’s transferred.',
+        syncSend: 'Send from this device', syncSendSub: 'You’ll get a six-digit code', syncReceive: 'Receive on this device',
+        syncReceiveSub: 'Enter the code from your other device', syncCodeHelp: 'On your other device, open Options → Receive on this device and enter:',
+        syncLeft: 'Code valid for {s} more s', syncExpired: 'The code expired. If the profile didn’t transfer, create a new one.',
+        syncCodeLabel: 'Code from your other device', syncReceiveBtn: 'Receive profile', syncFailed: 'Sync failed: {e}',
+        syncInvalidCode: 'Enter the six-digit code.', optApp: 'App', installAppSub: 'Moviora as an app on your desktop or home screen',
+        tvModeSub: 'Control with arrow keys and a remote',
+        share: 'Share', linkCopied: 'Link copied', sharedLoading: 'Opening shared title…',
+        sharedNotFound: 'Couldn’t find the shared title.', goHome: 'Go to home page'
     }
 };
 
@@ -249,6 +297,7 @@ function toast(text, ms = 3500) {
 
 const ICONS = {
     play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>',
     pause: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg>',
     vol: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>',
     mute: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
@@ -421,85 +470,402 @@ function calculateStreamScore(stream, movie, lang) {
 }
 
 // =====================================================
-// Navigace (funguje i tlačítko Zpět v prohlížeči)
+// Navigace: záložky, historie prohlížeče, odkazy v adrese
 // =====================================================
+const TABS = ['home', 'series', 'movies', 'favorites', 'continue'];
+const TAB_HASH = { home: '', series: '#serialy', movies: '#filmy', favorites: '#oblibene', continue: '#pokracovat' };
+const TAB_LABEL = { home: 'tabHome', series: 'tabSeries', movies: 'tabMovies', favorites: 'tabFavorites', continue: 'tabContinue' };
+let currentTab = 'home';
+
 function setView(view) {
     if (view !== 'results') $('resultsTools').innerHTML = '';
     libraryContainer.hidden = view !== 'home';
     resultsContainer.hidden = view !== 'results';
     movieDetail.hidden = view !== 'detail';
+    $('hero').hidden = !(view === 'home' && currentTab === 'home');
+    updateTabs(view === 'home' ? currentTab : null);
     window.scrollTo({ top: 0 });
 }
 
-function showMainPage(push = true) {
-    if (push) history.pushState({ view: 'home' }, '', location.pathname);
-    document.title = 'Moviora';
+function updateTabs(active) {
+    document.querySelectorAll('[data-tab]').forEach(b => {
+        if (b.dataset.tab === active) b.setAttribute('aria-current', 'page');
+        else b.removeAttribute('aria-current');
+    });
+}
+
+function showTab(tab = 'home', push = true) {
+    if (!TABS.includes(tab)) tab = 'home';
+    currentTab = tab;
+    if (push) history.pushState({ view: 'home', tab }, '', TAB_HASH[tab] || location.pathname);
+    document.title = tab === 'home' ? 'Moviora' : `${t(TAB_LABEL[tab])} – Moviora`;
     searchInput.value = '';
     setView('home');
     loadLibrary();
 }
 
+function showMainPage(push = true) {
+    showTab('home', push);
+}
+
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.tab === currentTab && !libraryContainer.hidden) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+    showTab(b.dataset.tab);
+}));
+
 let suppressNextPop = false;
 
 window.addEventListener('popstate', (e) => {
     if (suppressNextPop) { suppressNextPop = false; return; }
-    const state = e.state || { view: 'home' };
 
     // Zpět při otevřeném přehrávači jen zavře přehrávač
-    if (!playerEl.hidden && !state.player) {
+    if (!playerEl.hidden && !(e.state && e.state.player)) {
         closePlayer(true);
         return;
     }
-    renderRoute(state);
+    if (!e.state) { routeFromHash(false); return; }
+    renderRoute(e.state);
+});
+
+// Adresu změnil někdo jiný než aplikace (vložený odkaz, ruční úprava)
+window.addEventListener('hashchange', () => {
+    if (history.state && history.state.view) return;
+    routeFromHash(false);
 });
 
 function renderRoute(state) {
     state = state || { view: 'home' };
-    if (state.view === 'results' && state.q) return search(state.q, false);
+    if (state.view === 'results' && state.q) return search(state.q, false, state.filters || emptyFilters());
+    if (state.view === 'browse') { searchFilters = { ...emptyFilters(), ...(state.filters || {}) }; return browse(false); }
     if (state.view === 'list' && state.list) return openList(state.list, false);
     if (state.view === 'genre' && state.id) return openGenre(state.id, state.name, state.type, false);
     if (state.view === 'detail' && state.movie) return openMovieDetail(state.movie, false);
-    showMainPage(false);
+    if (state.view === 'shared' && state.spec) return openShared(state.spec);
+    showTab(state.tab || 'home', false);
+}
+
+// #film=tt0133093&9499, #hledat=matrix&typ=movie, #prochazet&zanr=1, #filmy…
+function stateFromHash(hash) {
+    let m;
+    if ((m = hash.match(/^#film=([^#]+)$/))) return { view: 'shared', spec: decodeURIComponent(m[1]) };
+    if ((m = hash.match(/^#hledat=([^&]+)(?:&(.*))?$/))) {
+        let q = m[1];
+        try { q = decodeURIComponent(q); } catch { /* neplatné kódování */ }
+        return { view: 'results', q, filters: filtersFromParams(m[2]) };
+    }
+    if ((m = hash.match(/^#prochazet(?:&(.*))?$/))) return { view: 'browse', filters: filtersFromParams(m[1]) };
+    if (/^#(top|popular)-(movies|series)$/.test(hash)) return { view: 'list', list: hash.slice(1) };
+    const tab = TABS.find(k => TAB_HASH[k] && TAB_HASH[k] === hash);
+    if (tab) return { view: 'home', tab };
+    return null;
+}
+
+function routeFromHash(isInit) {
+    const state = stateFromHash(location.hash);
+    if (!state) {
+        history.replaceState({ view: 'home', tab: 'home' }, '', location.pathname + (isInit ? location.search : ''));
+        showTab('home', false);
+        return;
+    }
+    if (isInit && !(state.view === 'home' && state.tab === 'home')) {
+        // pod otevřený odkaz vložit domovskou stránku, ať tlačítko Zpět nevede pryč z webu
+        const url = location.href;
+        history.replaceState({ view: 'home', tab: 'home' }, '', location.pathname + location.search);
+        history.pushState(state, '', url);
+    } else {
+        history.replaceState(state, '', location.href);
+    }
+    renderRoute(state);
+}
+
+// Sdílený odkaz: dohledat film podle IMDb a/nebo ČSFD id
+async function openShared(spec) {
+    const parts = String(spec).split(/[&,;]/).map(s => s.trim());
+    const imdb = parts.find(p => /^tt\d{5,10}$/.test(p));
+    const csfdId = parts.find(p => /^\d{1,9}$/.test(p));
+    if (!imdb && !csfdId) { showTab('home', false); return; }
+
+    const reqId = ++detailRequestId;
+    document.title = 'Moviora';
+    setView('detail');
+    $('detailBackdrop').style.backgroundImage = 'none';
+    detailContent.innerHTML = `<p class="status">${t('sharedLoading')}</p>`;
+    try {
+        const qs = [imdb ? `imdb=${imdb}` : '', csfdId ? `csfd=${csfdId}` : ''].filter(Boolean).join('&');
+        const d = await apiGet(`/resolve?${qs}`);
+        if (reqId !== detailRequestId) return;
+        if (!d.movie) throw new Error(d.error || '');
+        if (history.state && history.state.view === 'shared') history.replaceState({ view: 'detail', movie: d.movie }, '', location.href);
+        openMovieDetail(d.movie, false);
+    } catch {
+        if (reqId !== detailRequestId) return;
+        detailContent.innerHTML = `<p class="status error">${t('sharedNotFound')}</p><button type="button" class="btn" id="sharedHome">${t('goHome')}</button>`;
+        $('sharedHome').addEventListener('click', () => showTab('home'));
+        tvFocusFirst('#sharedHome');
+    }
+}
+
+// Odkaz pro sdílení: https://moviora.win/#film=tt0133093&9499 (jen to, co známe)
+function shareIdsOf(m) {
+    if (!m) return [];
+    const imdb = (String(m.imdbLink || m.imdb_url || m.imdbUrl || '').match(/tt\d{5,10}/) || [])[0];
+    const csfdId = (String(m.csfd_url || m.csfdLink || m.csfdUrl || '').match(/\/film\/(\d+)/) || [])[1];
+    return [imdb, csfdId].filter(Boolean);
+}
+const filmHash = (m) => { const ids = shareIdsOf(m); return ids.length ? `#film=${ids.join('&')}` : '#film'; };
+
+async function shareCurrent() {
+    const m = currentMovieData;
+    const ids = shareIdsOf(m);
+    if (!ids.length) return;
+    const url = `${location.origin}/#film=${ids.join('&')}`;
+    if (navigator.share && IS_TOUCH) {
+        try { await navigator.share({ title: `${displayTitle(m)} – Moviora`, url }); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    try {
+        await navigator.clipboard.writeText(url);
+        toast(t('linkCopied'), 2500);
+    } catch {
+        // starší prohlížeče: přes skryté textové pole
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch { /* nejde */ }
+        ta.remove();
+        toast(ok ? t('linkCopied') : url, ok ? 2500 : 9000);
+    }
 }
 
 // =====================================================
-// Vyhledávání
+// Vyhledávání a filtry
 // =====================================================
 $('searchForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    search(searchInput.value);
+    runSearchOrBrowse();
 });
 
 $('brandLink').addEventListener('click', (e) => {
     e.preventDefault();
-    showMainPage();
+    showTab('home');
 });
 
 // "/" skočí do vyhledávání
 document.addEventListener('keydown', (e) => {
-    if (e.key === '/' && playerEl.hidden && !/input|select|textarea/i.test(document.activeElement.tagName)) {
+    if (e.key === '/' && playerEl.hidden && !document.querySelector('dialog[open]') && !/input|select|textarea/i.test(document.activeElement.tagName)) {
         e.preventDefault();
         searchInput.focus();
         searchInput.select();
     }
 });
 
-async function search(rawQuery, push = true) {
+const emptyFilters = () => ({ type: 'all', genre: null, genreName: '', yearFrom: null, yearTo: null });
+let searchFilters = emptyFilters();
+let filterGenres = [];
+let resultsViewId = 0;
+
+const normalizeYear = (v) => { const n = parseInt(v, 10); return n >= 1880 && n <= 2100 ? n : null; };
+
+function filtersActiveCount(f = searchFilters) {
+    return (f.type !== 'all' ? 1 : 0) + (f.genre ? 1 : 0) + (f.yearFrom || f.yearTo ? 1 : 0);
+}
+
+function filtersToParams(f = searchFilters) {
+    const p = [];
+    if (f.type !== 'all') p.push(`typ=${f.type}`);
+    if (f.genre) p.push(`zanr=${f.genre}`);
+    if (f.yearFrom) p.push(`od=${f.yearFrom}`);
+    if (f.yearTo) p.push(`do=${f.yearTo}`);
+    return p.join('&');
+}
+
+function filtersFromParams(str) {
+    const f = emptyFilters();
+    String(str || '').split('&').forEach(part => {
+        const [k, v] = part.split('=');
+        if (k === 'typ' && (v === 'movie' || v === 'series')) f.type = v;
+        if (k === 'zanr' && /^\d+$/.test(v || '')) f.genre = +v;
+        if (k === 'od') f.yearFrom = normalizeYear(v);
+        if (k === 'do') f.yearTo = normalizeYear(v);
+    });
+    return f;
+}
+
+function updateFilterBadge() {
+    const n = filtersActiveCount();
+    $('filterBadge').hidden = !n;
+    $('filterBadge').textContent = String(n);
+    $('filterBtn').classList.toggle('active', n > 0);
+}
+
+async function loadFilterGenres() {
+    if (!filterGenres.length) {
+        try { filterGenres = (await getDiscover()).genres || []; } catch { /* bez žánrů */ }
+    }
+    return filterGenres;
+}
+
+async function ensureGenreName(f) {
+    if (f.genre && !f.genreName) {
+        const g = (await loadFilterGenres()).find(x => x.id === f.genre);
+        if (g) f.genreName = g.name;
+    }
+    return f;
+}
+
+function setFilterType(type) {
+    document.querySelectorAll('[data-ftype]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ftype === type)));
+}
+document.querySelectorAll('[data-ftype]').forEach(b => b.addEventListener('click', () => setFilterType(b.dataset.ftype)));
+
+async function openFilters() {
+    const dlg = $('filterDialog');
+    setFilterType(searchFilters.type);
+    const sel = $('fGenre');
+    const genres = await loadFilterGenres();
+    sel.innerHTML = `<option value="">${t('anyGenre')}</option>` +
+        genres.map(g => `<option value="${g.id}">${escapeHtml(genreLabel(g.name))}</option>`).join('');
+    sel.value = searchFilters.genre ? String(searchFilters.genre) : '';
+    $('fYearFrom').value = searchFilters.yearFrom || '';
+    $('fYearTo').value = searchFilters.yearTo || '';
+    $('fYearTo').placeholder = String(new Date().getFullYear());
+    if (dlg.open) return;
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+    tvFocus(dlg.querySelector('[data-ftype][aria-pressed="true"]'));
+}
+
+$('filterBtn').addEventListener('click', openFilters);
+
+$('filterForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const genreId = $('fGenre').value ? +$('fGenre').value : null;
+    let from = normalizeYear($('fYearFrom').value);
+    let to = normalizeYear($('fYearTo').value);
+    if (from && to && from > to) [from, to] = [to, from];
+    const pressed = document.querySelector('[data-ftype][aria-pressed="true"]');
+    searchFilters = {
+        type: pressed ? pressed.dataset.ftype : 'all',
+        genre: genreId,
+        genreName: genreId ? ((filterGenres.find(g => g.id === genreId) || {}).name || '') : '',
+        yearFrom: from,
+        yearTo: to
+    };
+    $('filterDialog').close();
+    updateFilterBadge();
+    runSearchOrBrowse(true);
+});
+
+$('fReset').addEventListener('click', () => {
+    searchFilters = emptyFilters();
+    $('filterDialog').close();
+    updateFilterBadge();
+    if (!resultsContainer.hidden) runSearchOrBrowse(true);
+});
+
+// Klik mimo panel ho zavře
+['filterDialog', 'optionsDialog'].forEach(id => $(id).addEventListener('click', (e) => {
+    if (e.target !== e.currentTarget) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) e.currentTarget.close();
+}));
+
+// Text → hledání (s filtry); bez textu, ale s filtry → procházení
+function runSearchOrBrowse(fromFilters = false) {
+    const q = searchInput.value.trim();
+    if (q) return search(q);
+    if (filtersActiveCount()) return browse();
+    if (fromFilters && history.state && (history.state.view === 'browse' || history.state.view === 'results')) showTab(currentTab);
+}
+
+function matchesFilters(m, f = searchFilters) {
+    const isSeries = Boolean(m.isSeries);
+    if (f.type === 'movie' && isSeries) return false;
+    if (f.type === 'series' && !isSeries) return false;
+    if (f.yearFrom || f.yearTo) {
+        const y = parseInt(m.year || m.rok, 10);
+        if (!y || (f.yearFrom && y < f.yearFrom) || (f.yearTo && y > f.yearTo)) return false;
+    }
+    if (f.genre) {
+        const g = Array.isArray(m.genres) ? m.genres : String(m.genres || '').split(/\s*[,/]\s*/);
+        if (!f.genreName || !g.includes(f.genreName)) return false;
+    }
+    return true;
+}
+
+function renderFilterChips(note = '') {
+    const tools = $('resultsTools');
+    const f = searchFilters;
+    tools.innerHTML = '';
+    const chips = [];
+    if (f.type !== 'all') chips.push(['type', t(f.type === 'movie' ? 'typeMovies' : 'typeSeries')]);
+    if (f.genre) chips.push(['genre', f.genreName ? genreLabel(f.genreName) : t('filterGenre')]);
+    if (f.yearFrom || f.yearTo) {
+        chips.push(['year', f.yearFrom && f.yearTo ? (f.yearFrom === f.yearTo ? String(f.yearFrom) : `${f.yearFrom}–${f.yearTo}`)
+            : f.yearFrom ? t('yearsFrom', { y: f.yearFrom }) : t('yearsTo', { y: f.yearTo })]);
+    }
+    if (!chips.length) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'filter-chips';
+    chips.forEach(([key, label]) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'filter-chip';
+        b.setAttribute('aria-label', `${t('removeFilter')}: ${label}`);
+        b.innerHTML = `<span></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+        b.firstChild.textContent = label;
+        b.addEventListener('click', () => {
+            if (key === 'type') searchFilters.type = 'all';
+            if (key === 'genre') { searchFilters.genre = null; searchFilters.genreName = ''; }
+            if (key === 'year') { searchFilters.yearFrom = null; searchFilters.yearTo = null; }
+            updateFilterBadge();
+            runSearchOrBrowse(true);
+        });
+        wrap.appendChild(b);
+    });
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'see-all';
+    edit.textContent = t('editFilters');
+    edit.addEventListener('click', openFilters);
+    wrap.appendChild(edit);
+    if (note) {
+        const n = document.createElement('span');
+        n.className = 'filter-note';
+        n.textContent = note;
+        wrap.appendChild(n);
+    }
+    tools.appendChild(wrap);
+}
+
+async function search(rawQuery, push = true, filters = null) {
     const query = String(rawQuery ?? searchInput.value).trim();
-    if (!query) return;
+    if (filters) searchFilters = { ...emptyFilters(), ...filters };
+    if (!query) { if (filtersActiveCount()) browse(push); return; }
+    updateFilterBadge();
 
     searchInput.value = query;
     searchInput.blur();
-    if (push) history.pushState({ view: 'results', q: query }, '', `#hledat=${encodeURIComponent(query)}`);
+    const params = filtersToParams();
+    if (push) history.pushState({ view: 'results', q: query, filters: { ...searchFilters } }, '', `#hledat=${encodeURIComponent(query)}${params ? '&' + params : ''}`);
     document.title = `${query} – Moviora`;
 
+    const viewId = ++resultsViewId;
     setView('results');
     $('resultsTitle').textContent = t('resultsFor', { q: query });
-    $('resultsTools').innerHTML = '';
+    renderFilterChips();
     resultsDiv.innerHTML = `<p class="status">${t('searching')}</p>`;
 
     try {
-        const data = await apiGet(`/search?q=${encodeURIComponent(query)}`);
+        const [data] = await Promise.all([apiGet(`/search?q=${encodeURIComponent(query)}`), ensureGenreName(searchFilters)]);
+        if (viewId !== resultsViewId) return;
         if (data.error) {
             resultsDiv.innerHTML = `<p class="status error">${t('searchFailed', { e: escapeHtml(data.error) })}</p>`;
             return;
@@ -508,10 +874,54 @@ async function search(rawQuery, push = true) {
             resultsDiv.innerHTML = `<p class="status">${t('noResults')}</p>`;
             return;
         }
-        renderGrid(data.results, resultsDiv, { lazyPosters: true });
+        let list = data.results;
+        if (filtersActiveCount()) {
+            list = list.filter(m => matchesFilters(m));
+            renderFilterChips(t('filteredCount', { n: list.length, total: data.results.length }));
+            if (!list.length) {
+                resultsDiv.innerHTML = `<p class="status">${t('noFilterMatch')}</p>`;
+                tvFocusFirst('#resultsTools button', true);
+                return;
+            }
+        }
+        renderGrid(list, resultsDiv, { lazyPosters: true });
         tvFocusFirst('#results .poster', true);
     } catch {
-        resultsDiv.innerHTML = `<p class="status error">${t('serverDown')}</p>`;
+        if (viewId === resultsViewId) resultsDiv.innerHTML = `<p class="status error">${t('serverDown')}</p>`;
+    }
+}
+
+// Procházení bez hledaného textu: žebříček ČSFD podle filtrů
+async function browse(push = true) {
+    updateFilterBadge();
+    const params = filtersToParams();
+    if (push) history.pushState({ view: 'browse', filters: { ...searchFilters } }, '', `#prochazet${params ? '&' + params : ''}`);
+    const title = t('browseTitle');
+    document.title = `${title} – Moviora`;
+    searchInput.value = '';
+
+    const viewId = ++resultsViewId;
+    setView('results');
+    $('resultsTitle').textContent = title;
+    renderFilterChips();
+    resultsDiv.innerHTML = `<p class="status">${t('searching')}</p>`;
+
+    const f = searchFilters;
+    const qs = [];
+    if (f.type !== 'all') qs.push(`type=${f.type}`);
+    if (f.genre) qs.push(`genre=${f.genre}`);
+    if (f.yearFrom) qs.push(`yearFrom=${f.yearFrom}`);
+    if (f.yearTo) qs.push(`yearTo=${f.yearTo}`);
+    try {
+        const [data] = await Promise.all([apiGet(`/discover/browse?${qs.join('&')}`), ensureGenreName(f)]);
+        if (viewId !== resultsViewId) return;
+        renderFilterChips();
+        if (data.error) throw new Error(data.error);
+        if (!data.items || !data.items.length) { resultsDiv.innerHTML = `<p class="status">${t('noFilterMatch')}</p>`; return; }
+        renderGrid(data.items, resultsDiv);
+        tvFocusFirst('#results .poster', true);
+    } catch {
+        if (viewId === resultsViewId) resultsDiv.innerHTML = `<p class="status error">${t('discoverFailed')}</p>`;
     }
 }
 
@@ -577,10 +987,12 @@ function renderGrid(movies, target, { lazyPosters = false, append = false, remov
             const x = document.createElement('button');
             x.type = 'button';
             x.className = 'poster-remove';
-            x.setAttribute('aria-label', `${t('removeFromHistory')}: ${title}`);
-            x.title = t('removeFromHistory');
+            const kind = removable === 'favorites' ? 'favorites' : 'history';
+            const label = t(kind === 'favorites' ? 'removeFromFavorites' : 'removeFromHistory');
+            x.setAttribute('aria-label', `${label}: ${title}`);
+            x.title = label;
             x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-            x.addEventListener('click', (e) => { e.stopPropagation(); removeFromHistory(title, item); });
+            x.addEventListener('click', (e) => { e.stopPropagation(); removeFromLibrary(kind, title, item); });
             item.append(card, x);
         }
         target.appendChild(item);
@@ -607,13 +1019,16 @@ function renderGrid(movies, target, { lazyPosters = false, append = false, remov
 // =====================================================
 // Detail filmu / seriálu
 // =====================================================
-async function openMovieDetail(movie, push = true) {
+let autoplayPending = false;
+
+async function openMovieDetail(movie, push = true, { autoplay = false } = {}) {
     const reqId = ++detailRequestId;
     currentMovieData = { ...movie };
     activeStreams = [];
     showAllSources = false;
+    autoplayPending = autoplay;
 
-    if (push) history.pushState({ view: 'detail', movie }, '', '#film');
+    if (push) history.pushState({ view: 'detail', movie }, '', filmHash(movie));
     document.title = `${displayTitle(movie)} – Moviora`;
     setView('detail');
 
@@ -662,6 +1077,12 @@ async function openMovieDetail(movie, push = true) {
     }
 
     Object.assign(currentMovieData, details);
+
+    // Adresa = sdílitelný odkaz (#film=tt…&…), jakmile známe IMDb i ČSFD id
+    if (history.state && history.state.view === 'detail' && !history.state.player) {
+        const h = filmHash(currentMovieData);
+        if (h !== location.hash) history.replaceState(history.state, '', h);
+    }
 
     if (currentMovieData.isSeries) {
         const lastEp = readJSON(`last_ep_${currentMovieData.title}`, { season: 1, episode: 1 });
@@ -743,6 +1164,7 @@ function renderDetail() {
                         <button type="button" data-lang="en" aria-pressed="${selectedLanguage === 'en'}">${t('audioOrig')}</button>
                     </div>
                     <button class="btn btn-quiet" id="favBtn" aria-pressed="${fav}">${ICONS.star}<span>${fav ? t('inFavorites') : t('addFavorite')}</span></button>
+                    ${shareIdsOf(m).length ? `<button class="btn btn-quiet" id="shareBtn">${ICONS.share}<span>${t('share')}</span></button>` : ''}
                 </div>
 
                 ${episodePicker}
@@ -764,6 +1186,7 @@ function renderDetail() {
 
     $('playBtn').addEventListener('click', () => startStreaming());
     $('favBtn').addEventListener('click', toggleFavoriteCurrent);
+    if ($('shareBtn')) $('shareBtn').addEventListener('click', shareCurrent);
     detailContent.querySelectorAll('.segmented button').forEach(b =>
         b.addEventListener('click', () => onLanguageChange(b.dataset.lang)));
 
@@ -959,7 +1382,7 @@ async function fetchAndRenderStreams() {
     const stages = [];   // každá etapa = dotazy spuštěné naráz; další etapa jen když předchozí nic nenašla
 
     if (m.isSeries) {
-        writeJSON(`last_ep_${m.title}`, { season: currentSeason, episode: currentEpisode });
+        writeJSON(`last_ep_${m.title}`, { season: currentSeason, episode: currentEpisode, at: Date.now() });
         const ep = episodeTag(), alt = `${currentSeason}x${pad2(currentEpisode)}`;
         if (en) {
             stages.push([`${m.title} ${ep} ENG`, orig ? `${orig} ${ep}` : null]);
@@ -1004,6 +1427,7 @@ async function fetchAndRenderStreams() {
         renderSources();
     } catch (e) {
         if (e.name === 'AbortError' || !isCurrent()) return;
+        autoplayPending = false;
         setPlayButton('none');
         $('sourcesBody').innerHTML = `<p class="status error">${t('sourcesFailed', { e: escapeHtml(e.message) })}</p>`;
     }
@@ -1036,6 +1460,7 @@ function renderSources() {
     if (!body) return;
 
     if (activeStreams.length === 0) {
+        autoplayPending = false;
         setPlayButton('none');
         $('sourcesCount').textContent = '';
         const other = selectedLanguage === 'cz' ? t('audioOrig') : t('audioCz');
@@ -1090,6 +1515,12 @@ function renderSources() {
     });
     $('moreSources')?.addEventListener('click', () => { showAllSources = true; renderSources(); });
     $('downloadBtn').addEventListener('click', startDownloading);
+
+    // Z hlavní obrazovky (Pokračovat) rovnou přehrát nejlepší zdroj
+    if (autoplayPending) {
+        autoplayPending = false;
+        startStreaming();
+    }
 }
 
 function selectSource(idx) {
@@ -1163,6 +1594,12 @@ async function startStreaming(streamOverride) {
         if (playerEl.hidden) return; // uživatel mezitím zavřel
 
         currentSources = data.sources;
+        writeJSON('last_played', {
+            ...libraryEntry(currentMovieData),
+            season: currentMovieData.isSeries ? currentSeason : undefined,
+            episode: currentMovieData.isSeries ? currentEpisode : undefined,
+            at: Date.now()
+        });
         videoPlayer.innerHTML = '';
         videoPlayer.src = data.sources[0].file || data.sources[0].src;
 
@@ -1334,7 +1771,9 @@ function saveProgress(force = false) {
     const key = getWatchKey();
     if (key) writeJSON(key, {
         time: videoPlayer.currentTime,
-        percent: (videoPlayer.currentTime / videoPlayer.duration) * 100
+        percent: (videoPlayer.currentTime / videoPlayer.duration) * 100,
+        duration: videoPlayer.duration,
+        at: now
     });
 }
 
@@ -1536,20 +1975,153 @@ function getWatchProgressForCard(title, isSeries) {
 }
 
 function loadLibrary() {
-    const favorites = readJSON('favorites', []);
-    const history = readJSON('watch_history', []);
-
-    $('historySection').hidden = history.length === 0;
-    $('favoritesSection').hidden = favorites.length === 0;
-
-    if (history.length) renderGrid(history, $('historyGrid'), { removable: true });
-    if (favorites.length) renderGrid(favorites, $('favoritesGrid'));
-    loadDiscover();
-    tvFocusFirst('#historyGrid .poster, #discoverRows .poster, #favoritesGrid .poster, #searchQuery', true);
+    const tab = currentTab;
+    $('homeIntro').hidden = true;
+    $('tabHead').hidden = tab === 'home';
+    $('tabTitle').textContent = t(TAB_LABEL[tab]);
+    if (tab === 'home') renderHero();
+    if (tab === 'favorites' || tab === 'continue') renderLibraryTab(tab);
+    else loadDiscover(tab);
 }
 
 // =====================================================
-// Nabídka na hlavní stránce (z ČSFD přes náš server)
+// Domů: naposledy přehrané přes celou obrazovku
+// =====================================================
+let heroItem = null;
+let heroRenderId = 0;
+
+function heroCandidate() {
+    const hist = readJSON('watch_history', []);
+    const last = readJSON('last_played', null);
+    if (last && last.title && hist.some(h => h.title === last.title)) {
+        const inHist = hist.find(h => h.title === last.title);
+        return { item: { ...inHist, ...last }, kind: 'last' };
+    }
+    if (hist.length) return { item: hist[0], kind: 'last' };
+    return null;
+}
+
+async function renderHero() {
+    const id = ++heroRenderId;
+    const hero = $('hero');
+    let cand = heroCandidate();
+    if (!cand) {
+        // Nic rozkoukaného: ukázat nejsledovanější film
+        hero.classList.add('is-loading');
+        try {
+            const data = await getDiscover();
+            const pop = ((data.sections || []).find(s => s.id === 'popular-movies') || {}).items || [];
+            const top = pop.find(i => i.poster) || pop[0];
+            if (top) cand = { item: { ...top, csfd_url: top.csfdUrl }, kind: 'popular' };
+        } catch { /* bez nabídky */ }
+        if (id !== heroRenderId) return;
+        hero.classList.remove('is-loading');
+        if (!cand) {
+            hero.hidden = true;
+            heroItem = null;
+            return;
+        }
+    }
+    heroItem = cand;
+    fillHero(cand);
+
+    // Popis (a plakát) z ČSFD, pokud v uložené položce chybí
+    const csfdUrl = cand.item.csfd_url || cand.item.csfdLink || cand.item.csfdUrl;
+    if (!cand.item.description && csfdUrl) {
+        try {
+            const d = await apiGet(`/csfd-scrape?url=${encodeURIComponent(csfdUrl)}`);
+            if (id !== heroRenderId || d.error) return;
+            if (d.explicit) { hero.hidden = true; return; }
+            if (d.description) cand.item.description = d.description;
+            if (!cand.item.poster && d.poster) cand.item.poster = d.poster;
+            if (d.titleEn && !cand.item.titleEn) cand.item.titleEn = d.titleEn;
+            if (d.isSeries) cand.item.isSeries = true;
+            fillHero(cand);
+        } catch { /* bez popisu */ }
+    }
+}
+
+function fillHero({ item: m, kind }) {
+    $('heroKicker').textContent = t(kind === 'popular' ? 'heroPopular' : 'heroLast');
+    $('heroTitle').textContent = displayTitle(m) || m.title;
+
+    const poster = m.poster || '';
+    $('heroBg').style.backgroundImage = poster ? `url("${encodeURI(poster).replace(/"/g, '%22')}")` : 'none';
+    const img = $('heroPoster');
+    img.hidden = !poster;
+    img.onerror = () => { img.hidden = true; };
+    if (poster && img.getAttribute('src') !== poster) img.src = poster;
+
+    let ep = null;
+    if (m.isSeries) {
+        const le = readJSON(`last_ep_${m.title}`, null);
+        if (le) ep = { s: le.season, e: le.episode };
+    }
+    const facts = [];
+    if (m.year && m.year !== '---') facts.push(`<li>${escapeHtml(m.year)}</li>`);
+    if (ep) facts.push(`<li>${escapeHtml(t('seasonEp', { s: ep.s, e: ep.e }))}</li>`);
+    else if (m.isSeries) facts.push(`<li>${t('series')}</li>`);
+    if (!m.isSeries && m.runtime) facts.push(`<li>${escapeHtml(m.runtime)} min</li>`);
+    const genres = Array.isArray(m.genres) ? m.genres.slice(0, 3).map(genreLabel).join(', ') : m.genres;
+    if (genres) facts.push(`<li>${escapeHtml(genres)}</li>`);
+    if (m.rating) facts.push(`<li class="rating">${t('rating', { n: escapeHtml(m.rating) })}</li>`);
+    $('heroFacts').innerHTML = facts.join('');
+    $('heroFacts').hidden = !facts.length;
+
+    const prog = kind === 'last' ? getWatchProgressForCard(m.title, m.isSeries) : null;
+    const resume = Boolean(prog && prog.percent > 1 && prog.percent < 98);
+    $('heroProgress').hidden = !resume;
+    if (resume) {
+        $('heroBar').style.width = `${Math.min(100, prog.percent).toFixed(1)}%`;
+        const dur = prog.duration || (prog.percent > 0 ? prog.time / (prog.percent / 100) : 0);
+        const left = Math.max(0, dur - prog.time);
+        $('heroLeft').textContent = left >= 60 ? t('heroLeft', { t: `${Math.round(left / 60)} min` }) : '';
+    }
+
+    $('heroPlot').textContent = m.description || '';
+    $('heroPlot').hidden = !m.description;
+
+    const tag = ep ? episodeTag(ep.s, ep.e) : '';
+    const label = resume ? (tag ? t('heroResumeEp', { ep: tag }) : t('heroResume')) : (tag ? t('heroPlayEp', { ep: tag }) : t('play'));
+    $('heroPlay').innerHTML = `${ICONS.play}<span></span>`;
+    $('heroPlay').lastChild.textContent = label;
+}
+
+function heroMovie() {
+    const m = heroItem.item;
+    return { ...m, csfdLink: m.csfd_url || m.csfdLink || m.csfdUrl };
+}
+
+$('heroPlay').addEventListener('click', () => { if (heroItem) openMovieDetail(heroMovie(), true, { autoplay: true }); });
+$('heroDetail').addEventListener('click', () => { if (heroItem) openMovieDetail(heroMovie()); });
+$('heroScroll').addEventListener('click', () => {
+    const top = $('hero').getBoundingClientRect().bottom + window.scrollY - document.querySelector('.topbar').offsetHeight;
+    window.scrollTo({ top, behavior: 'smooth' });
+});
+
+// =====================================================
+// Oblíbené a Pokračovat (mřížka s křížkem pro odebrání)
+// =====================================================
+function renderLibraryTab(tab) {
+    ++discoverRenderId;
+    disconnectGenreObserver();
+    const host = $('discoverRows');
+    const items = readJSON(tab === 'favorites' ? 'favorites' : 'watch_history', []);
+    host.innerHTML = '';
+    if (!items.length) {
+        host.innerHTML = `<p class="empty-note">${t(tab === 'favorites' ? 'favoritesEmpty' : 'continueEmpty')}</p>`;
+        tvFocusFirst('#tabs [aria-current="page"]', true);
+        return;
+    }
+    const grid = document.createElement('div');
+    grid.className = 'poster-grid';
+    host.appendChild(grid);
+    renderGrid(items, grid, { removable: tab === 'favorites' ? 'favorites' : 'history' });
+    tvFocusFirst('#discoverRows .poster', true);
+}
+
+// =====================================================
+// Nabídka z ČSFD (přes náš server)
 // =====================================================
 const DISCOVER_LOCAL_TTL = 6 * 60 * 60 * 1000;   // v prohlížeči obnovit po 6 h (server sám po 24 h)
 let discoverMem = null;
@@ -1590,7 +2162,7 @@ async function getDiscover() {
     return discoverLoading;
 }
 
-function rowSection({ id, title, items, seeAll, skeleton = false }) {
+function rowSection({ id, title, items, seeAll, skeleton = false, removable = false }) {
     const sec = document.createElement('section');
     sec.className = 'shelf row-shelf';
     if (id) sec.dataset.row = id;
@@ -1617,7 +2189,7 @@ function rowSection({ id, title, items, seeAll, skeleton = false }) {
     if (skeleton) {
         row.innerHTML = '<span class="poster skeleton"><span class="poster-frame"></span></span>'.repeat(7);
     } else {
-        renderGrid(items, row);
+        renderGrid(items, row, { removable });
     }
     const prev = document.createElement('button');
     const next = document.createElement('button');
@@ -1635,37 +2207,72 @@ function rowSection({ id, title, items, seeAll, skeleton = false }) {
     return sec;
 }
 
-function genreSection(genres) {
-    const sec = document.createElement('section');
-    sec.className = 'shelf';
-    sec.dataset.row = 'genres';
-    sec.innerHTML = `<h2 class="shelf-title">${t('genresTitle')}</h2>`;
-    const chips = document.createElement('div');
-    chips.className = 'genre-chips';
-    genres.forEach(g => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'genre-chip';
-        b.textContent = genreLabel(g.name);
-        b.addEventListener('click', () => openGenre(g.id, g.name, 'movie'));
-        chips.appendChild(b);
-    });
-    sec.appendChild(chips);
-    return sec;
-}
-
 let discoverRenderId = 0;
 
-async function loadDiscover() {
+// Žánrové řady na záložkách Filmy a Seriály se načítají, až k nim uživatel doroluje
+let genreObserver = null;
+function disconnectGenreObserver() {
+    if (genreObserver) { genreObserver.disconnect(); genreObserver = null; }
+}
+
+async function fillGenreRow(sec, renderId) {
+    if (sec.dataset.loaded) return;
+    sec.dataset.loaded = '1';
+    try {
+        const d = await apiGet(`/discover/genre?id=${sec.dataset.genre}&type=${sec.dataset.type}`);
+        if (renderId !== discoverRenderId) return;
+        const items = (d.items || []).slice(0, 20);
+        if (!items.length) { sec.remove(); return; }
+        const row = sec.querySelector('.poster-row');
+        row.innerHTML = '';
+        renderGrid(items, row);
+    } catch {
+        if (renderId === discoverRenderId) sec.remove();
+    }
+}
+
+function observeGenreRows(renderId) {
+    const rows = Array.from(document.querySelectorAll('#discoverRows [data-genre]'));
+    if (!('IntersectionObserver' in window)) {
+        // starší televize: postupně jednu po druhé
+        (async () => {
+            for (const r of rows) {
+                if (renderId !== discoverRenderId) return;
+                await fillGenreRow(r, renderId);
+            }
+        })();
+        return;
+    }
+    genreObserver = new IntersectionObserver(entries => entries.forEach(en => {
+        if (!en.isIntersecting) return;
+        genreObserver.unobserve(en.target);
+        fillGenreRow(en.target, renderId);
+    }), { rootMargin: '700px 0px' });
+    rows.forEach(r => genreObserver.observe(r));
+}
+
+async function loadDiscover(tab = currentTab) {
     const host = $('discoverRows');
     const renderId = ++discoverRenderId;
+    disconnectGenreObserver();
     const history = readJSON('watch_history', []);
     const favorites = readJSON('favorites', []);
+    const libraryRows = () => {
+        const out = [];
+        if (tab !== 'home') return out;
+        if (history.length) out.push(rowSection({ id: 'continue', title: t('continueWatching'), items: history, removable: 'history', seeAll: () => showTab('continue') }));
+        return out;
+    };
+    const favoritesRow = () => (tab === 'home' && favorites.length
+        ? rowSection({ id: 'favorites', title: t('favorites'), items: favorites, seeAll: () => showTab('favorites') }) : null);
 
     // Kostra hned, ať stránka neposkakuje
     if (!discoverMem) {
         host.innerHTML = '';
-        host.append(rowSection({ title: t('popularMovies'), skeleton: true }), rowSection({ title: t('popularSeries'), skeleton: true }));
+        libraryRows().forEach(r => host.appendChild(r));
+        const series = tab === 'series';
+        host.append(rowSection({ title: t(series ? 'popularSeries' : 'popularMovies'), skeleton: true }),
+            rowSection({ title: t(series ? 'topSeries' : 'popularSeries'), skeleton: true }));
     }
 
     let data;
@@ -1673,21 +2280,20 @@ async function loadDiscover() {
         data = await getDiscover();
     } catch {
         if (renderId !== discoverRenderId) return;
-        host.innerHTML = `<p class="status">${t('discoverFailed')}</p>`;
-        $('homeIntro').hidden = history.length > 0 || favorites.length > 0;
-        tvFocusFirst('#historyGrid .poster, #favoritesGrid .poster, #searchQuery', true);
+        host.innerHTML = '';
+        libraryRows().forEach(r => host.appendChild(r));
+        const fav = favoritesRow();
+        if (fav) host.appendChild(fav);
+        host.insertAdjacentHTML('beforeend', `<p class="status">${t('discoverFailed')}</p>`);
+        $('homeIntro').hidden = tab !== 'home' || history.length > 0 || favorites.length > 0;
+        tvFocusFirst('#heroPlay, #discoverRows .poster, #searchQuery', true);
         return;
     }
     if (renderId !== discoverRenderId) return;
-    $('homeIntro').hidden = true;
+    filterGenres = data.genres || filterGenres;
 
     const byId = Object.fromEntries(data.sections.map(sec => [sec.id, sec.items]));
     const frag = document.createDocumentFragment();
-
-    // „Protože jsi sledoval…“ – místo pro řadu, doplní se, až dorazí podobné tituly
-    const becauseSlot = document.createElement('div');
-    frag.appendChild(becauseSlot);
-
     const addRow = (id) => {
         const items = byId[id];
         if (!items || !items.length) return;
@@ -1697,18 +2303,44 @@ async function loadDiscover() {
             seeAll: isTop ? () => openList(id) : null
         }));
     };
-    addRow('popular-movies');
-    addRow('popular-series');
-    if (data.genres && data.genres.length) frag.appendChild(genreSection(data.genres));
-    addRow('top-movies');
-    addRow('top-series');
+
+    // „Protože jsi sledoval…“ – místo pro řadu, doplní se, až dorazí podobné tituly
+    const becauseSlot = document.createElement('div');
+
+    if (tab === 'home') {
+        libraryRows().forEach(r => frag.appendChild(r));
+        frag.appendChild(becauseSlot);
+        addRow('popular-movies');
+        addRow('popular-series');
+        addRow('top-movies');
+        addRow('top-series');
+        const fav = favoritesRow();
+        if (fav) frag.appendChild(fav);
+    } else {
+        const series = tab === 'series';
+        addRow(series ? 'popular-series' : 'popular-movies');
+        addRow(series ? 'top-series' : 'top-movies');
+        (data.genres || []).forEach(g => {
+            const sec = rowSection({
+                id: `genre-${g.id}`, title: genreLabel(g.name), skeleton: true,
+                seeAll: () => openGenre(g.id, g.name, series ? 'series' : 'movie')
+            });
+            sec.dataset.genre = g.id;
+            sec.dataset.type = series ? 'series' : 'movie';
+            frag.appendChild(sec);
+        });
+    }
 
     host.innerHTML = '';
     host.appendChild(frag);
-    // Na TV začít na prvním plakátu, dokud uživatel sám nic nevybral
-    tvFocusFirst('#historyGrid .poster, #discoverRows .poster, #searchQuery', tvInteracted || document.activeElement !== searchInput);
+    if (tab !== 'home') observeGenreRows(renderId);
+
+    // Na TV začít na hlavním tlačítku / prvním plakátu, dokud uživatel sám nic nevybral
+    tvFocusFirst(tab === 'home' ? '#heroPlay, #discoverRows .poster, #searchQuery' : '#discoverRows .poster, #tabs [aria-current="page"]',
+        tvInteracted || document.activeElement !== searchInput);
 
     // Doporučení podle posledního sledovaného titulu z ČSFD
+    if (tab !== 'home') return;
     const seed = history.find(h => /\/film\/\d+/.test(h.csfd_url || h.csfdLink || h.csfdUrl || ''));
     if (seed) {
         const id = (seed.csfd_url || seed.csfdLink || seed.csfdUrl).match(/\/film\/(\d+)/)[1];
@@ -1772,39 +2404,49 @@ async function openGenre(id, name, type = 'movie', push = true) {
     }
 }
 
-// Odebrání z historie sledování (včetně uložené pozice)
-function removeFromHistory(title, itemEl) {
-    const history = readJSON('watch_history', []).filter(h => h.title !== title);
-    writeJSON('watch_history', history);
-    try {
-        Object.keys(localStorage)
-            .filter(k => k === `progress_${title}` || k.startsWith(`progress_${title}_S`) || k === `last_ep_${title}`)
-            .forEach(k => localStorage.removeItem(k));
-    } catch { /* úložiště nedostupné */ }
+// Odebrání z historie (včetně uložené pozice) nebo z oblíbených
+function removeFromLibrary(kind, title, itemEl) {
+    if (kind === 'favorites') {
+        writeJSON('favorites', readJSON('favorites', []).filter(f => f.title !== title));
+    } else {
+        writeJSON('watch_history', readJSON('watch_history', []).filter(h => h.title !== title));
+        try {
+            Object.keys(localStorage)
+                .filter(k => k === `progress_${title}` || k.startsWith(`progress_${title}_S`) || k === `last_ep_${title}`)
+                .forEach(k => localStorage.removeItem(k));
+            const last = readJSON('last_played', null);
+            if (last && last.title === title) localStorage.removeItem('last_played');
+        } catch { /* úložiště nedostupné */ }
+    }
 
     // Na TV přesunout výběr na sousední kartu
     const row = itemEl && itemEl.parentElement;
     const neighbour = itemEl && (itemEl.nextElementSibling || itemEl.previousElementSibling);
     const hadFocus = itemEl && itemEl.contains(document.activeElement);
     if (itemEl) itemEl.remove();
-    if (row && !row.children.length) $('historySection').hidden = true;
-    if (hadFocus) {
-        const next = neighbour && neighbour.querySelector('.poster');
-        if (next) tvFocus(next); else tvFocusFirst('#discoverRows .poster, #searchQuery');
+    if (row && !row.children.length) {
+        const shelf = row.closest('.row-shelf');
+        if (shelf) shelf.remove();
+        else renderLibraryTab(currentTab);
     }
-    toast(t('removedFromHistory', { title }), 2500);
+    if (hadFocus) {
+        const next = neighbour && document.contains(neighbour) && neighbour.querySelector('.poster');
+        if (next) tvFocus(next); else tvFocusFirst('#discoverRows .poster, #tabs [aria-current="page"]');
+    }
+    if (kind === 'history' && currentTab === 'home' && !libraryContainer.hidden) renderHero();
+    toast(t(kind === 'favorites' ? 'removedFromFavorites' : 'removedFromHistory', { title }), 2500);
 }
 
 // Do knihovny ukládáme jen to, co je potřeba pro kartu a detail
 function libraryEntry(m) {
-    const { title, titleEn, originalTitle, year, poster, csfd_url, csfdLink, imdbLink, isSeries, genres, rating, runtime, description, actors, id, source } = m;
-    return { title, titleEn, originalTitle, year, poster, csfd_url, csfdLink, imdbLink, isSeries, genres, rating, runtime, description, actors, id, source };
+    const { title, titleEn, originalTitle, year, poster, csfd_url, csfdLink, imdbLink, isSeries, genres, rating, runtime, description, actors, id, source, watchedAt } = m;
+    return { title, titleEn, originalTitle, year, poster, csfd_url, csfdLink, imdbLink, isSeries, genres, rating, runtime, description, actors, id, source, watchedAt };
 }
 
 function addToHistory(movie) {
     const history = readJSON('watch_history', []).filter(h => h.title !== movie.title);
-    history.unshift(libraryEntry(movie));
-    writeJSON('watch_history', history.slice(0, 20));
+    history.unshift({ ...libraryEntry(movie), watchedAt: Date.now() });
+    writeJSON('watch_history', history.slice(0, 30));
 }
 
 function isMovieInFavorites(title) {
@@ -1861,8 +2503,9 @@ function setUiLang(lang) {
     } else if (!resultsContainer.hidden) {
         renderRoute(history.state);
     } else if (!libraryContainer.hidden) {
-        loadDiscover();
+        loadLibrary();
     }
+    document.title = !libraryContainer.hidden ? (currentTab === 'home' ? 'Moviora' : `${t(TAB_LABEL[currentTab])} – Moviora`) : document.title;
     if (!playerEl.hidden && currentMovieData) {
         P.subtitle.textContent = currentMovieData.isSeries ? t('seasonEp', { s: currentSeason, e: currentEpisode }) : P.subtitle.textContent;
     }
@@ -2002,6 +2645,7 @@ function installHelpText() {
 }
 
 installBtn.addEventListener('click', async () => {
+    if ($('optionsDialog').open) $('optionsDialog').close();
     if (deferredInstall) {
         deferredInstall.prompt();
         const choice = await deferredInstall.userChoice.catch(() => null);
@@ -2019,7 +2663,7 @@ $('installClose').addEventListener('click', () => $('installDialog').close());
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredInstall = e;
-    if (!IS_STANDALONE) installBtn.hidden = false;
+    if (!IS_STANDALONE && !isTv()) installBtn.hidden = false;
 });
 window.addEventListener('appinstalled', () => {
     deferredInstall = null;
@@ -2032,6 +2676,259 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
         navigator.serviceWorker.register('/sw.js').catch(() => { /* bez SW web funguje dál */ });
     });
 }
+
+// =====================================================
+// Možnosti: export/import profilu a rychlá synchronizace
+// =====================================================
+const optionsDlg = $('optionsDialog');
+
+function openOptions() {
+    resetSyncUi();
+    if (optionsDlg.open) return;
+    if (typeof optionsDlg.showModal === 'function') optionsDlg.showModal(); else optionsDlg.setAttribute('open', '');
+    tvFocus(optionsDlg.querySelector('.lang-switch [aria-pressed="true"]'));
+}
+$('optionsBtn').addEventListener('click', openOptions);
+$('optionsClose').addEventListener('click', () => optionsDlg.close());
+optionsDlg.addEventListener('close', () => {
+    // zavřením panelu se rozpracovaný kód zruší (nikdo ho už nevidí)
+    if (syncState) cancelSync();
+    resetSyncUi();
+});
+
+// Co patří do profilu (vše ostatní v úložišti je mezipaměť)
+const PROFILE_KEY = /^(watch_history|favorites|last_played|lang|ui_lang|volume|progress_.+|last_ep_.+)$/;
+
+function buildProfile() {
+    const data = {};
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && PROFILE_KEY.test(k)) data[k] = readJSON(k, null);
+        }
+    } catch { /* úložiště nedostupné */ }
+    return { format: 'moviora-profile', version: 1, exported: new Date().toISOString(), app: 'https://moviora.win', data };
+}
+
+function exportProfile() {
+    const text = JSON.stringify(buildProfile(), null, 1);
+    const d = new Date();
+    const name = `moviora-${uiLang === 'en' ? 'profile' : 'profil'}-${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}.mw`;
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/octet-stream' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast(t('exported', { f: name }), 4000);
+}
+$('exportBtn').addEventListener('click', exportProfile);
+
+function readFileText(file) {
+    if (file.text) return file.text();
+    return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(r.error);
+        r.readAsText(file);
+    });
+}
+
+$('importBtn').addEventListener('click', () => $('importFile').click());
+$('importFile').addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+        if (file.size > 3 * 1024 * 1024) throw new Error('too big');
+        afterProfileMerge(mergeProfile(JSON.parse(await readFileText(file))));
+    } catch {
+        toast(t('importBad'), 4500);
+    }
+});
+
+// --- Sloučení profilu (soubor nebo synchronizace) – vše se kontroluje, nic se nepřebírá naslepo ---
+const httpUrl = (u) => typeof u === 'string' && u.length < 2000 && /^https?:\/\//i.test(u) ? u : undefined;
+const numOr = (v) => (typeof v === 'number' && isFinite(v) ? v : undefined);
+
+function cleanEntry(e) {
+    if (!e || typeof e !== 'object' || typeof e.title !== 'string' || !e.title.trim()) return null;
+    const out = { title: e.title.slice(0, 300) };
+    ['titleEn', 'originalTitle', 'description', 'actors', 'source', 'id'].forEach(k => {
+        if (typeof e[k] === 'string') out[k] = e[k].slice(0, 5000);
+    });
+    ['year', 'rating', 'runtime'].forEach(k => {
+        if (typeof e[k] === 'string' || typeof e[k] === 'number') out[k] = typeof e[k] === 'string' ? e[k].slice(0, 40) : e[k];
+    });
+    if (Array.isArray(e.genres)) out.genres = e.genres.filter(g => typeof g === 'string').slice(0, 12).map(g => g.slice(0, 60));
+    else if (typeof e.genres === 'string') out.genres = e.genres.slice(0, 300);
+    ['poster', 'csfd_url', 'csfdLink', 'imdbLink'].forEach(k => { const u = httpUrl(e[k]); if (u) out[k] = u; });
+    out.isSeries = Boolean(e.isSeries);
+    ['watchedAt', 'at', 'season', 'episode'].forEach(k => { const n = numOr(e[k]); if (n !== undefined) out[k] = n; });
+    return out;
+}
+
+const newerThan = (a, b) => !b || (a.at || 0) > (b.at || 0) || (!a.at && !b.at && (a.time || 0) > (b.time || 0));
+
+function mergeProfile(profile) {
+    if (!profile || profile.format !== 'moviora-profile' || !profile.data || typeof profile.data !== 'object') {
+        throw new Error(t('importBad'));
+    }
+    const data = profile.data;
+    const list = (v) => (Array.isArray(v) ? v.map(cleanEntry).filter(Boolean) : []);
+
+    // Historie: novější záznam vyhrává, seřadit podle času
+    const histMap = new Map();
+    [...list(data.watch_history), ...readJSON('watch_history', [])].forEach(e => {
+        const prev = histMap.get(e.title);
+        if (!prev || (e.watchedAt || 0) > (prev.watchedAt || 0)) histMap.set(e.title, e);
+    });
+    const hist = Array.from(histMap.values()).sort((a, b) => (b.watchedAt || 0) - (a.watchedAt || 0)).slice(0, 30);
+    writeJSON('watch_history', hist);
+
+    // Oblíbené: místní zůstávají, nové se přidají
+    const favs = readJSON('favorites', []);
+    list(data.favorites).forEach(e => { if (!favs.some(f => f.title === e.title)) favs.push(e); });
+    writeJSON('favorites', favs);
+
+    let keys = 0;
+    Object.keys(data).forEach(k => {
+        if (++keys > 5000 || k.length > 400 || !PROFILE_KEY.test(k)) return;
+        const v = data[k];
+        if (k.startsWith('progress_')) {
+            if (!v || numOr(v.time) === undefined || numOr(v.percent) === undefined) return;
+            const clean = { time: Math.max(0, v.time), percent: Math.max(0, Math.min(100, v.percent)) };
+            if (numOr(v.at) !== undefined) clean.at = v.at;
+            if (numOr(v.duration) !== undefined) clean.duration = v.duration;
+            if (newerThan(clean, readJSON(k, null))) writeJSON(k, clean);
+        } else if (k.startsWith('last_ep_')) {
+            const s = parseInt(v && v.season, 10), e = parseInt(v && v.episode, 10);
+            if (!(s > 0 && e > 0)) return;
+            const clean = { season: s, episode: e };
+            if (numOr(v.at) !== undefined) clean.at = v.at;
+            const local = readJSON(k, null);
+            if (!local || (clean.at || 0) > (local.at || 0)) writeJSON(k, clean);
+        } else if (k === 'last_played') {
+            const clean = cleanEntry(v);
+            if (clean && newerThan(clean, readJSON(k, null))) writeJSON(k, clean);
+        } else if (k === 'lang' && (v === 'cz' || v === 'en')) writeJSON(k, v);
+        else if (k === 'ui_lang' && (v === 'cs' || v === 'en')) writeJSON(k, v);
+        else if (k === 'volume' && numOr(v) !== undefined) writeJSON(k, Math.max(0, Math.min(1, v)));
+    });
+    return { history: hist.length, favorites: favs.length };
+}
+
+function afterProfileMerge(res) {
+    selectedLanguage = readJSON('lang', selectedLanguage) === 'en' ? 'en' : 'cz';
+    const vol = readJSON('volume', null);
+    if (typeof vol === 'number') videoPlayer.volume = vol;
+    if (optionsDlg.open) optionsDlg.close();
+    const lang = readJSON('ui_lang', uiLang);
+    if (lang !== uiLang) setUiLang(lang);
+    else renderRoute(history.state);
+    toast(t('importDone', { h: res.history, f: res.favorites }), 4500);
+}
+
+// --- Rychlá synchronizace přes náš server (kód platí 60 s, stáhnout jde jen jednou) ---
+let syncState = null;   // { code, expires, total, timer }
+
+async function apiPost(path, body) {
+    let res;
+    try {
+        res = await fetch(`${API_URL}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    } catch (err) {
+        reportPossibleOutage();
+        throw err;
+    }
+    let data = {};
+    try { data = await res.json(); } catch { /* neplatná odpověď */ }
+    if (!res.ok && !data.error) data.error = t('serverError', { s: res.status });
+    return data;
+}
+
+function showSyncPane(name) {
+    $('syncStart').hidden = name !== 'start';
+    $('syncCodeView').hidden = name !== 'code';
+    $('syncReceiveView').hidden = name !== 'receive';
+}
+function syncError(msg) { $('syncError').textContent = msg || ''; }
+function resetSyncUi() {
+    if (syncState && syncState.timer) clearInterval(syncState.timer);
+    syncState = null;
+    showSyncPane('start');
+    syncError('');
+}
+function cancelSync() {
+    if (syncState && syncState.code) apiPost('/sync/cancel', { code: syncState.code }).catch(() => {});
+}
+
+function tickSync() {
+    if (!syncState) return;
+    const left = Math.max(0, Math.round((syncState.expires - Date.now()) / 1000));
+    $('syncTimerBar').style.width = `${(left / syncState.total) * 100}%`;
+    $('syncTimerText').textContent = t('syncLeft', { s: left });
+    if (left <= 0) {
+        resetSyncUi();
+        syncError(t('syncExpired'));
+        tvFocus($('syncSend'));
+    }
+}
+
+$('syncSend').addEventListener('click', async () => {
+    const btn = $('syncSend');
+    btn.disabled = true;
+    syncError('');
+    try {
+        const d = await apiPost('/sync', { profile: buildProfile() });
+        if (!d.code) throw new Error(d.error || '');
+        const total = d.expiresIn || 60;
+        syncState = { code: d.code, expires: Date.now() + total * 1000, total, timer: null };
+        $('syncCode').textContent = `${d.code.slice(0, 3)} ${d.code.slice(3)}`;
+        showSyncPane('code');
+        tickSync();
+        syncState.timer = setInterval(tickSync, 1000);
+        tvFocus($('syncCancel'));
+    } catch (e) {
+        syncError(t('syncFailed', { e: e.message || t('serverDown') }));
+    } finally {
+        btn.disabled = false;
+    }
+});
+
+$('syncCancel').addEventListener('click', () => { cancelSync(); resetSyncUi(); tvFocus($('syncSend')); });
+
+$('syncReceive').addEventListener('click', () => {
+    showSyncPane('receive');
+    syncError('');
+    $('syncInput').value = '';
+    tvFocus($('syncInput'));
+    if (!isTv()) $('syncInput').focus();
+});
+$('syncReceiveBack').addEventListener('click', () => { showSyncPane('start'); syncError(''); tvFocus($('syncReceive')); });
+$('syncInput').addEventListener('input', (e) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 6);
+    e.target.value = digits.length > 3 ? `${digits.slice(0, 3)} ${digits.slice(3)}` : digits;
+});
+
+$('syncReceiveView').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = $('syncInput').value.replace(/\D/g, '');
+    if (code.length !== 6) { syncError(t('syncInvalidCode')); return; }
+    const btn = $('syncReceiveGo');
+    btn.disabled = true;
+    syncError('');
+    try {
+        const d = await apiGet(`/sync/${code}`);
+        if (!d.profile) throw new Error(d.error || '');
+        afterProfileMerge(mergeProfile(d.profile));
+    } catch (err) {
+        syncError(t('syncFailed', { e: err.message || t('serverDown') }));
+    } finally {
+        btn.disabled = false;
+    }
+});
 
 // =====================================================
 // Režim pro televizi – ovládání šipkami (prostorová navigace)
@@ -2061,13 +2958,12 @@ function setTvMode(on, announce = false) {
     searchInput.readOnly = on;
     searchInput.inputMode = on ? 'none' : 'search';
     if (!on && !tvKb.hidden) closeKeyboard();
-    const btn = $('tvToggle');
-    btn.setAttribute('aria-pressed', String(on));
-    btn.querySelector('span').textContent = t(on ? 'tvModeOff' : 'tvModeOn');
+    $('tvToggle').setAttribute('aria-pressed', String(on));
+    installBtn.hidden = IS_STANDALONE || on;
     if (announce) {
         writeJSON('tv_mode', on);
         toast(t(on ? 'tvEnabled' : 'tvDisabled'), 3000);
-        if (on) tvFocusFirst('#main .poster, #playBtn, #searchQuery', true);
+        if (on) tvFocusFirst('dialog[open] #tvToggle, #heroPlay, #main .poster, #playBtn, #searchQuery', true);
     }
 }
 $('tvToggle').addEventListener('click', () => setTvMode(!isTv(), true));
@@ -2098,8 +2994,10 @@ function tvFocus(el) {
     if (!el) return;
     el.focus({ preventScroll: true });
     if (!isTv()) return;
+    // hlavní obrazovka nahoře: ukázat ji celou
+    if (el.closest('.hero')) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     // posunout jen obsah, ne lištu nahoře
-    if (!el.closest('.topbar') && !el.closest('.player')) {
+    if (!el.closest('.topbar') && !el.closest('.player') && !el.closest('dialog')) {
         const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         try { el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: smooth ? 'smooth' : 'auto' }); }
         catch { el.scrollIntoView(false); }
@@ -2160,8 +3058,8 @@ function tvBack() {
     if (dlg) { dlg.close(); return true; }
     if (!tvKb.hidden) { closeKeyboard(); return true; }
     if (!playerEl.hidden) { closePlayer(); return true; }
-    const view = history.state && history.state.view;
-    if (view && view !== 'home') { history.back(); return true; }
+    const st = history.state || {};
+    if (st.view && (st.view !== 'home' || (st.tab && st.tab !== 'home'))) { history.back(); return true; }
     return false; // domovská obrazovka – nechat TV, ať aplikaci zavře
 }
 
@@ -2438,12 +3336,6 @@ searchInput.addEventListener('click', () => { if (isTv()) openKeyboard(); });
     updatePlayButton();
     updateMuteButton();
 
-    const hashQuery = location.hash.match(/^#hledat=(.+)$/);
-    if (hashQuery) {
-        history.replaceState({ view: 'results', q: decodeURIComponent(hashQuery[1]) }, '', location.href);
-        search(decodeURIComponent(hashQuery[1]), false);
-    } else {
-        history.replaceState({ view: 'home' }, '', location.pathname);
-        showMainPage(false);
-    }
+    updateFilterBadge();
+    routeFromHash(true);
 })();

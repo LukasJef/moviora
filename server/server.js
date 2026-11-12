@@ -1,22 +1,82 @@
 // =====================================================
 // Moviora – API server
-// Proměnné prostředí: PORT, PREHRAJTO_EMAIL, PREHRAJTO_PASSWORD
+// Proměnné prostředí: PORT, PREHRAJTO_EMAIL, PREHRAJTO_PASSWORD, ADMIN_PORT
+// Nastavení měněná za běhu (ovládací panel) se ukládají do config.json vedle serveru.
 // =====================================================
 import express from 'express';
 import { readFile, writeFile } from 'node:fs/promises';
+import { readFileSync, writeFileSync, existsSync, chmodSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { randomInt } from 'node:crypto';
 import path from 'node:path';
 import cors from 'cors';
 import { csfd } from 'node-csfd-api';
 import axios from 'axios';
+import { startAdmin } from './admin.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+// ==========================================
+// Nastavení (config.json – mimo Git, práva jen pro vlastníka)
+// ==========================================
+const CONFIG_FILE = path.join(SERVER_DIR, 'config.json');
+const settings = {
+    apiEnabled: true,
+    syncEnabled: true,
+    prehrajto: { email: '', password: '' },
+    admin: null,                         // { username, salt, hash } – nastavuje tools/set-admin.mjs
+    adminPort: 8443
+};
+try {
+    if (existsSync(CONFIG_FILE)) Object.assign(settings, JSON.parse(readFileSync(CONFIG_FILE, 'utf8')));
+} catch (e) {
+    console.error('config.json nejde přečíst:', e.message);
+}
+const ADMIN_PORT = Number(process.env.ADMIN_PORT) || Number(settings.adminPort) || 8443;
+function saveSettings() {
+    writeFileSync(CONFIG_FILE, JSON.stringify(settings, null, 2));
+    try { chmodSync(CONFIG_FILE, 0o600); } catch { /* Windows */ }
+}
+
+// Posledních 300 řádků logu pro ovládací panel
+const logBuffer = [];
+for (const level of ['log', 'warn', 'error']) {
+    const orig = console[level].bind(console);
+    console[level] = (...args) => {
+        const line = args.map(a => (a instanceof Error ? a.message : typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+        logBuffer.push({ t: Date.now(), level, line: line.slice(0, 500) });
+        if (logBuffer.length > 300) logBuffer.shift();
+        orig(...args);
+    };
+}
+
+// Statistiky požadavků (po minutách, posledních 60 minut)
+const stats = { started: Date.now(), total: 0, minutes: new Map(), byPath: new Map() };
 
 // Povolíme CORS pro přístup z frontendu
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '600kb' }));
 app.set('trust proxy', true); // za Cloudflare – skutečná IP klienta z hlaviček
+const clientIp = (req) => req.headers['cf-connecting-ip'] || req.ip;
+
+app.use((req, res, next) => {
+    stats.total++;
+    const minute = Math.floor(Date.now() / 60000);
+    stats.minutes.set(minute, (stats.minutes.get(minute) || 0) + 1);
+    for (const k of stats.minutes.keys()) if (k < minute - 60) stats.minutes.delete(k);
+    const key = req.path.split('/').slice(0, 2).join('/') || '/';
+    stats.byPath.set(key, (stats.byPath.get(key) || 0) + 1);
+    next();
+});
+
+// Vypnuté API (ovládací panel): vše vrací 503 – web ukáže obrazovku „Server je offline“
+app.use((req, res, next) => {
+    if (settings.apiEnabled) return next();
+    res.set('Retry-After', '60');
+    res.status(503).json({ error: 'API je dočasně vypnuté.' });
+});
 
 // ==========================================
 // Omezení počtu požadavků na IP (ochrana VPS a účtu)
@@ -27,7 +87,7 @@ const rateHits = new Map();
 
 app.use((req, res, next) => {
     if (req.path === '/health') return next();
-    const ip = req.headers['cf-connecting-ip'] || req.ip;
+    const ip = clientIp(req);
     const now = Date.now();
     const entry = rateHits.get(ip);
     if (!entry || now - entry.start > RATE_WINDOW) {
@@ -141,11 +201,15 @@ async function csfdMovieCached(id, { background = false } = {}) {
 // ==========================================
 // Anonymní požadavky z datacenter dostávají prázdný výpis,
 // přihlášený účet projde. Údaje se berou z proměnných prostředí.
-const PJ_EMAIL = process.env.PREHRAJTO_EMAIL;
-const PJ_PASSWORD = process.env.PREHRAJTO_PASSWORD;
+// Údaje: z ovládacího panelu (config.json), jinak z proměnných prostředí
+const pjCreds = () => ({
+    email: settings.prehrajto?.email || process.env.PREHRAJTO_EMAIL || '',
+    password: settings.prehrajto?.password || process.env.PREHRAJTO_PASSWORD || ''
+});
+const pjStatus = { loggedIn: false, lastLogin: null, lastError: null };
 const PJ_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-if (!PJ_EMAIL || !PJ_PASSWORD) {
+if (!pjCreds().email || !pjCreds().password) {
     console.warn('⚠️  Chybí PREHRAJTO_EMAIL / PREHRAJTO_PASSWORD – vyhledávání streamů nebude fungovat.');
 }
 
@@ -173,7 +237,10 @@ function pjLogin() {
     if (loginPromise) return loginPromise;
 
     loginPromise = (async () => {
+        const { email: PJ_EMAIL, password: PJ_PASSWORD } = pjCreds();
         if (!PJ_EMAIL || !PJ_PASSWORD) {
+            pjStatus.loggedIn = false;
+            pjStatus.lastError = 'Chybí přihlašovací údaje';
             throw new Error('Chybí přihlašovací údaje k prehraj.to (PREHRAJTO_EMAIL / PREHRAJTO_PASSWORD)');
         }
 
@@ -212,10 +279,15 @@ function pjLogin() {
         storeCookies(res);
 
         if (!pjCookies.has('access_token')) {
+            pjStatus.loggedIn = false;
+            pjStatus.lastError = `Přihlášení odmítnuto (HTTP ${res.status})`;
             console.error('Přihlášení selhalo – status:', res.status, 'set-cookie:', res.headers['set-cookie']);
             throw new Error('Přihlášení na prehraj.to selhalo');
         }
 
+        pjStatus.loggedIn = true;
+        pjStatus.lastLogin = new Date().toISOString();
+        pjStatus.lastError = null;
         console.log('✅ Přihlášeno na prehraj.to');
     })().finally(() => {
         loginPromise = null;
@@ -401,7 +473,12 @@ app.get('/search', async (req, res) => {
         ]);
         const results = top.filter(r => !isExplicit(cachedMovie(csfdIdOf(r))));
         for (const r of results) {
-            if (!r.titleEn) r.titleEn = enTitleOf(cachedMovie(csfdIdOf(r))) || null;
+            const m = cachedMovie(csfdIdOf(r));
+            if (!r.titleEn) r.titleEn = enTitleOf(m) || null;
+            if (m) {
+                r.genres = Array.isArray(m.genres) ? m.genres : [];
+                if (String(m.type || '').toLowerCase() === 'series') r.isSeries = true;
+            }
         }
         res.json({ results });
 
@@ -675,8 +752,8 @@ function sectionAfterHeading(html, heading) {
 
 // Adresa filtrovaného žebříčku (ČSFD kóduje filtr jako JSON → base64 → ROT13)
 const rot13 = (s) => s.replace(/[a-zA-Z]/g, c => String.fromCharCode((c <= 'Z' ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26));
-function genreChartUrl(genreId, isSeries) {
-    const filter = { type: isSeries ? 3 : 1, country_id: null, genre: [genreId], year_from: null, year_to: null, actor: [], director: [] };
+function genreChartUrl(genreId, isSeries, yearFrom = null, yearTo = null) {
+    const filter = { type: isSeries ? 3 : 1, country_id: null, genre: genreId ? [genreId] : [], year_from: yearFrom, year_to: yearTo, actor: [], director: [] };
     return `${CSFD_BASE}/zebricky/vlastni-vyber/?filter=${encodeURIComponent(rot13(Buffer.from(JSON.stringify(filter)).toString('base64').replace(/=+$/, '')))}`;
 }
 
@@ -810,6 +887,170 @@ app.get('/discover/genre', async (req, res) => {
         if (old) return res.json(old);
         res.status(502).json({ error: 'Žánr se nepodařilo načíst: ' + err.message });
     }
+});
+
+// ==========================================
+// PROCHÁZENÍ S FILTRY (vyhledávání bez textu): typ, žánr, roky
+// ==========================================
+const browseCache = new Map();
+const yearParam = (v) => { const n = parseInt(v, 10); return n >= 1880 && n <= 2100 ? n : null; };
+
+app.get('/discover/browse', async (req, res) => {
+    const types = req.query.type === 'series' ? [true] : req.query.type === 'movie' ? [false] : [false, true];
+    const genre = parseInt(req.query.genre, 10) || null;
+    const yearFrom = yearParam(req.query.yearFrom);
+    const yearTo = yearParam(req.query.yearTo);
+    const key = `${types.join('')}-${genre}-${yearFrom}-${yearTo}`;
+    try {
+        let entry = browseCache.get(key);
+        if (!entry || isStale(entry.updated)) {
+            const isDocGenre = (discoverData?.genres || []).some(g => g.id === genre && g.name === 'Dokumentární');
+            const lists = await Promise.all(types.map(async (isSeries) =>
+                parseFilmArticles(await csfdHtml(genreChartUrl(genre, isSeries, yearFrom, yearTo)), { isSeries, excludeDocs: genre ? !isDocGenre : false })));
+            // Filmy a seriály dohromady seřadit podle hodnocení
+            const items = lists.flat().sort((a, b) => (b.rating || 0) - (a.rating || 0));
+            entry = { updated: new Date().toISOString(), items };
+            if (browseCache.size > 200) browseCache.delete(browseCache.keys().next().value);
+            browseCache.set(key, entry);
+            const e = entry;
+            enrichItems(e.items).then(changed => { if (changed) e.items = e.items.filter(i => !i.explicit); }).catch(() => {});
+        }
+        res.set('Cache-Control', 'public, max-age=1800');
+        res.json({ items: entry.items.filter(i => !i.explicit) });
+    } catch (err) {
+        res.status(502).json({ error: 'Procházení se nepodařilo načíst: ' + err.message });
+    }
+});
+
+// ==========================================
+// SDÍLENÍ: odkaz #film=tt0133093&9499 → údaje o filmu
+// ==========================================
+async function csfdIdFromImdb(imdbId) {
+    try {
+        const q = `SELECT ?csfd WHERE { ?item wdt:P345 "${imdbId}"; wdt:P2529 ?csfd. } LIMIT 1`;
+        const j = await fetchJson('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(q), {
+            'User-Agent': 'Moviora/1.0 (https://moviora.win)', Accept: 'application/sparql-results+json'
+        });
+        const v = j?.results?.bindings?.[0]?.csfd?.value;
+        if (v && /^\d+/.test(v)) return parseInt(v, 10);
+    } catch { /* Wikidata nedostupná */ }
+    return null;
+}
+
+app.get('/resolve', async (req, res) => {
+    const imdb = /^tt\d{5,10}$/.test(req.query.imdb || '') ? req.query.imdb : null;
+    let csfdId = parseInt(req.query.csfd, 10) || null;
+    if (!imdb && !csfdId) return res.status(400).json({ error: "Chybí parametr 'csfd' nebo 'imdb'" });
+    try {
+        let imdbInfo = null;
+        if (imdb) {
+            const d = await fetchJson(`https://v3.sg.media-imdb.com/suggestion/x/${imdb}.json`, { 'User-Agent': 'Mozilla/5.0' }).catch(() => null);
+            imdbInfo = (d?.d || []).find(x => x.id === imdb) || null;
+        }
+        if (!csfdId && imdb) csfdId = await csfdIdFromImdb(imdb);
+        // Záloha: dohledat na ČSFD podle názvu a roku z IMDb
+        if (!csfdId && imdbInfo?.l) {
+            const r = await csfd.search(imdbInfo.l).catch(() => null);
+            const all = [...(r?.movies || []), ...(r?.tvSeries || []).filter(m => String(m.type).toLowerCase() === 'series')];
+            const hit = all.find(m => !imdbInfo.y || Math.abs((parseInt(m.year, 10) || 0) - imdbInfo.y) <= 1);
+            if (hit) csfdId = hit.id;
+        }
+
+        if (csfdId) {
+            const m = await csfdMovieCached(csfdId);
+            if (!m) throw new Error('Film nebyl na ČSFD nalezen.');
+            if (isExplicit(m)) return res.status(404).json({ error: 'Titul není dostupný.' });
+            const type = String(m.type || '').toLowerCase();
+            const imdbUrl = imdb ? `https://www.imdb.com/title/${imdb}/` : await resolveImdb(m, type === 'series').catch(() => null);
+            return res.json({ movie: {
+                title: m.title, titleEn: enTitleOf(m), year: m.year || '', poster: m.poster || '',
+                isSeries: type === 'series', source: 'csfd',
+                csfd_url: `${CSFD_BASE}/film/${csfdId}/prehled/`, imdbLink: imdbUrl
+            } });
+        }
+        if (imdbInfo) {
+            return res.json({ movie: {
+                title: imdbInfo.l, titleEn: imdbInfo.l, year: imdbInfo.y || '', poster: imdbInfo.i?.imageUrl || '',
+                isSeries: /series/i.test(imdbInfo.qid || ''), source: 'imdb', csfd_url: null,
+                imdbLink: `https://www.imdb.com/title/${imdb}/`
+            } });
+        }
+        res.status(404).json({ error: 'Film se nepodařilo najít.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
+// RYCHLÁ SYNCHRONIZACE PROFILU
+// Zdrojové zařízení nahraje profil a dostane 6místný kód platný 60 s.
+// Cílové zařízení kód zadá a profil si (jednorázově) stáhne.
+// Ochrana: jedna aktivní synchronizace na IP, limit chybných kódů, strop počtu uložených profilů.
+// ==========================================
+const SYNC_TTL = 60 * 1000;
+const SYNC_MAX_STORED = 500;
+const SYNC_MAX_BYTES = 512 * 1024;
+const syncStore = new Map();        // kód → { profile, ip, expires }
+const syncByIp = new Map();         // ip → kód
+const syncFails = new Map();        // ip → { count, until }
+
+function cleanupSync() {
+    const now = Date.now();
+    for (const [code, e] of syncStore) if (e.expires <= now) { syncStore.delete(code); if (syncByIp.get(e.ip) === code) syncByIp.delete(e.ip); }
+    for (const [ip, f] of syncFails) if (f.until <= now) syncFails.delete(ip);
+}
+setInterval(cleanupSync, 5000).unref();
+
+app.post('/sync', (req, res) => {
+    if (!settings.syncEnabled) return res.status(503).json({ error: 'Synchronizace je teď vypnutá.' });
+    cleanupSync();
+    const ip = clientIp(req);
+    const active = syncByIp.get(ip);
+    if (active && syncStore.has(active)) {
+        const wait = Math.ceil((syncStore.get(active).expires - Date.now()) / 1000);
+        res.set('Retry-After', String(wait));
+        return res.status(429).json({ error: `Synchronizaci lze spustit znovu za ${wait} s.`, retryAfter: wait });
+    }
+    const profile = req.body && req.body.profile;
+    if (!profile || profile.format !== 'moviora-profile') return res.status(400).json({ error: 'Neplatný profil.' });
+    if (JSON.stringify(profile).length > SYNC_MAX_BYTES) return res.status(413).json({ error: 'Profil je moc velký.' });
+    if (syncStore.size >= SYNC_MAX_STORED) return res.status(503).json({ error: 'Synchronizace je teď přetížená, zkus to za chvíli.' });
+
+    let code;
+    do { code = String(randomInt(0, 1000000)).padStart(6, '0'); } while (syncStore.has(code));
+    syncStore.set(code, { profile, ip, expires: Date.now() + SYNC_TTL });
+    syncByIp.set(ip, code);
+    res.json({ code, expiresIn: SYNC_TTL / 1000 });
+});
+
+app.post('/sync/cancel', (req, res) => {
+    const ip = clientIp(req);
+    const code = String(req.body?.code || '');
+    const e = syncStore.get(code);
+    if (e && e.ip === ip) { syncStore.delete(code); syncByIp.delete(ip); }
+    res.json({ ok: true });
+});
+
+app.get('/sync/:code', (req, res) => {
+    if (!settings.syncEnabled) return res.status(503).json({ error: 'Synchronizace je teď vypnutá.' });
+    cleanupSync();
+    const ip = clientIp(req);
+    const fails = syncFails.get(ip);
+    if (fails && fails.count >= 10 && fails.until > Date.now()) {
+        return res.status(429).json({ error: 'Příliš mnoho chybných kódů. Zkus to za pár minut.' });
+    }
+    const code = String(req.params.code || '').replace(/\D/g, '');
+    const e = syncStore.get(code);
+    if (!e) {
+        const f = fails && fails.until > Date.now() ? fails : { count: 0, until: Date.now() + 10 * 60 * 1000 };
+        f.count++;
+        syncFails.set(ip, f);
+        return res.status(404).json({ error: 'Kód neplatí nebo už vypršel.' });
+    }
+    syncStore.delete(code);
+    if (syncByIp.get(e.ip) === code) syncByIp.delete(e.ip);
+    res.set('Cache-Control', 'no-store');
+    res.json({ profile: e.profile });
 });
 
 // Podobné tituly k filmu (pro řadu „Protože jsi sledoval…“)
@@ -1023,4 +1264,42 @@ app.get('/get-video', async (req, res) => {
 // Spuštění serveru
 app.listen(PORT, () => {
     console.log(`🎬 API Backend běží na portu ${PORT}`);
+});
+
+// Ovládací panel (HTTPS na vlastním portu)
+startAdmin({
+    port: ADMIN_PORT,
+    settings,
+    saveSettings,
+    serverDir: SERVER_DIR,
+    logBuffer,
+    getStatus: () => ({
+        uptime: Math.round(process.uptime()),
+        memoryMb: Math.round(process.memoryUsage().rss / 1048576),
+        node: process.version,
+        requests: {
+            total: stats.total,
+            lastMinute: stats.minutes.get(Math.floor(Date.now() / 60000) - 1) || 0,
+            lastHour: [...stats.minutes.values()].reduce((a, b) => a + b, 0),
+            perMinute: [...Array(60)].map((_, i) => stats.minutes.get(Math.floor(Date.now() / 60000) - 59 + i) || 0),
+            byPath: Object.fromEntries([...stats.byPath].sort((a, b) => b[1] - a[1]).slice(0, 10))
+        },
+        prehrajto: { ...pjStatus, email: pjCreds().email },
+        discover: { updated: discoverData?.updated || null, sections: (discoverData?.sections || []).map(s => ({ id: s.id, count: s.items.length })) },
+        caches: { csfd: csfdCache.size, imdb: imdbCache.size, streams: streamsCache.size, genres: genreCache.size, browse: browseCache.size },
+        sync: { stored: syncStore.size }
+    }),
+    actions: {
+        refreshDiscover: async () => { const d = await refreshDiscover(); return `Nabídka obnovena (${d.sections.map(s => s.items.length).join(' / ')} titulů).`; },
+        clearCaches: () => { csfdCache.clear(); imdbCache.clear(); streamsCache.clear(); browseCache.clear(); similarCache.clear(); return 'Mezipaměti vyčištěny.'; },
+        relogin: async () => { pjCookies.clear(); await pjLogin(); return 'Přihlášení na prehraj.to proběhlo.'; },
+        getPrehrajto: () => pjCreds(),
+        setPrehrajto: async (email, password) => {
+            settings.prehrajto = { email, password };
+            saveSettings();
+            pjCookies.clear();
+            await pjLogin();
+            return 'Údaje uloženy a přihlášení proběhlo.';
+        }
+    }
 });
