@@ -4,7 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#170b0c">
-    <title>Moviora</title>
+    <title>Moviora – filmy a seriály online</title>
+    <meta name="description" content="Filmy a seriály na jednom místě. Vyhledávání v ČSFD a IMDb, CZ dabing i původní znění, pokračování tam, kde jsi skončil, a vlastní přehrávač.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Moviora">
+    <meta property="og:title" content="Moviora – filmy a seriály online">
+    <meta property="og:description" content="Filmy a seriály na jednom místě. Vyhledávání v ČSFD a IMDb, CZ dabing i původní znění a vlastní přehrávač.">
+    <meta property="og:url" content="https://moviora.win/">
+    <meta property="og:image" content="https://moviora.win/icons/icon-512.png">
+    <meta property="og:locale" content="cs_CZ">
+    <link rel="canonical" href="https://moviora.win/">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="manifest" href="manifest.webmanifest">
@@ -1267,7 +1276,7 @@
         </section>
     </dialog>
 
-    <dialog id="installDialog" class="notice" aria-labelledby="installTitle">
+    <dialog id="installDialog" class="notice" data-nosnippet aria-labelledby="installTitle">
         <h2 id="installTitle" data-i18n="installTitle">Nainstalovat Movioru</h2>
         <p id="installText"></p>
         <div class="notice-actions">
@@ -1275,7 +1284,7 @@
         </div>
     </dialog>
 
-    <dialog id="foreignNotice" class="notice" aria-labelledby="noticeTitle" lang="en">
+    <dialog id="foreignNotice" class="notice" data-nosnippet aria-labelledby="noticeTitle" lang="en">
         <h2 id="noticeTitle">Moviora is made for Czech viewers</h2>
         <p>This site is built for people in the Czech Republic and Slovakia, so some things may not work as you’d expect.</p>
         <p>Movie details come from Czech databases, and a movie can still play with Czech audio even when you choose <strong>Original audio</strong>.</p>

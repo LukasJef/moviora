@@ -136,7 +136,7 @@ const I18N = {
         kbHint: 'Čísla na ovladači píšou jako na mobilu: opakovaným stiskem 2 napíšeš a, b, c…',
         removeFromHistory: 'Odebrat z historie', removedFromHistory: 'Odebráno z historie: {title}',
         notAvailable: 'Tento titul na Moviora není dostupný.',
-        mainNav: 'Hlavní nabídka', tabHome: 'Domů', tabSeries: 'Seriály', tabMovies: 'Filmy', tabFavorites: 'Oblíbené', tabContinue: 'Pokračovat',
+        homeTitle: 'Moviora – filmy a seriály online', mainNav: 'Hlavní nabídka', tabHome: 'Domů', tabSeries: 'Seriály', tabMovies: 'Filmy', tabFavorites: 'Oblíbené', tabContinue: 'Pokračovat',
         heroLast: 'Naposledy jsi sledoval', heroPopular: 'Teď nejsledovanější', heroResume: 'Pokračovat', heroResumeEp: 'Pokračovat {ep}',
         heroPlayEp: 'Přehrát {ep}', heroDetail: 'Detail', heroLeft: 'Zbývá {t}', heroMore: 'Další nabídka',
         favoritesEmpty: 'Oblíbené zatím nemáš. Přidáš je hvězdičkou v detailu filmu nebo seriálu.',
@@ -223,7 +223,7 @@ const I18N = {
         kbHint: 'Number keys on the remote type like an old phone: press 2 repeatedly for a, b, c…',
         removeFromHistory: 'Remove from history', removedFromHistory: 'Removed from history: {title}',
         notAvailable: 'This title isn’t available on Moviora.',
-        mainNav: 'Main menu', tabHome: 'Home', tabSeries: 'TV shows', tabMovies: 'Movies', tabFavorites: 'Favourites', tabContinue: 'Continue',
+        homeTitle: 'Moviora – movies and TV shows online', mainNav: 'Main menu', tabHome: 'Home', tabSeries: 'TV shows', tabMovies: 'Movies', tabFavorites: 'Favourites', tabContinue: 'Continue',
         heroLast: 'You last watched', heroPopular: 'Most watched right now', heroResume: 'Resume', heroResumeEp: 'Resume {ep}',
         heroPlayEp: 'Play {ep}', heroDetail: 'Details', heroLeft: '{t} left', heroMore: 'More to watch',
         favoritesEmpty: 'No favourites yet. Add them with the star on a movie or show page.',
@@ -498,7 +498,7 @@ function showTab(tab = 'home', push = true) {
     if (!TABS.includes(tab)) tab = 'home';
     currentTab = tab;
     if (push) history.pushState({ view: 'home', tab }, '', TAB_HASH[tab] || location.pathname);
-    document.title = tab === 'home' ? 'Moviora' : `${t(TAB_LABEL[tab])} – Moviora`;
+    document.title = tab === 'home' ? t('homeTitle') : `${t(TAB_LABEL[tab])} – Moviora`;
     searchInput.value = '';
     setView('home');
     loadLibrary();
@@ -2505,7 +2505,7 @@ function setUiLang(lang) {
     } else if (!libraryContainer.hidden) {
         loadLibrary();
     }
-    document.title = !libraryContainer.hidden ? (currentTab === 'home' ? 'Moviora' : `${t(TAB_LABEL[currentTab])} – Moviora`) : document.title;
+    document.title = !libraryContainer.hidden ? (currentTab === 'home' ? t('homeTitle') : `${t(TAB_LABEL[currentTab])} – Moviora`) : document.title;
     if (!playerEl.hidden && currentMovieData) {
         P.subtitle.textContent = currentMovieData.isSeries ? t('seasonEp', { s: currentSeason, e: currentEpisode }) : P.subtitle.textContent;
     }
